@@ -1,1 +1,1 @@
-from . import bars  # noqa: F401
+from . import bars, signals  # noqa: F401
