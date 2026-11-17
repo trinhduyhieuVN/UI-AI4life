@@ -34,7 +34,7 @@ export async function loadSeries(resetCursor) {
   const tf = S.tf;
   const bars = await ensureSeries(S.sym, S.si, tf);
   if (tok !== loadToken) return;
-  D.bars = bars; D.total = bars.length;
+  D.bars = bars; D.total = bars.length; D.HAC = {};
   const maxCount = tf === '1D' ? Math.max(11, D.total) : 390;
   $('nq-c-zoom').max = maxCount;
   $('nq-c-zoom').min = tf === '1D' ? 4 : 14;

@@ -20,11 +20,14 @@ function sigKey() {
 const sigPending = new Map();
 /* Lấy một lần tại mốc End (cursor=389 intraday / si cho 1D); lọc nhân quả phía client khi tua. */
 export function ensureSignals() {
+  /* loop() có thể render trước khi loadMeta nạp D.SESSIONS — đừng gọi /signals với date undefined. */
+  const date = D.SESSIONS[S.si];
+  if (!date) return Promise.resolve([]);
   const key = sigKey();
   if (D.sigCache.has(key)) return Promise.resolve(D.sigCache.get(key));
   if (sigPending.has(key)) return sigPending.get(key);
   const r = curRole();
-  const params = new URLSearchParams({ date: D.SESSIONS[S.si], tf: S.tf, scope: r.sigScope, cursor: S.tf === '1D' ? String(S.si) : '389' });
+  const params = new URLSearchParams({ date, tf: S.tf, scope: r.sigScope, cursor: S.tf === '1D' ? String(S.si) : '389' });
   if (r.sigScope === 'symbol') params.set('symbol', S.sym);
   const p = api('/signals?' + params.toString())
     .then(res => { D.sigCache.set(key, res.signals); sigPending.delete(key); D.sigDirty = true; return res.signals; })
