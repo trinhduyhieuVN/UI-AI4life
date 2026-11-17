@@ -10,6 +10,7 @@ from ..db import get_db
 from ..models import SymbolRow, TradingSession, User
 from ..roles import caps_for
 from ..services.bars import TFS, get_bars
+from ..services.audit import log_audit
 from ..services.signals import event_out, session_dates
 from .signals import DATE_RE, select_for
 
@@ -54,6 +55,8 @@ def signals_csv(
             o["score"], o["threshold"], int(o["alert"]), o["reason"],
             o["suppressedReason"] or "", o["outbox"], o["quality"],
         ])
+    log_audit(db, u.id, "export", {"kind": "signals"})
+    db.commit()
     return _csv_response(buf, "signals.csv")
 
 
@@ -78,4 +81,6 @@ def bars_csv(
     w.writerow(["t", "o", "h", "l", "c", "v"])
     for b in get_bars(db, symbol, date, tf):
         w.writerow([b["t"], b["o"], b["h"], b["l"], b["c"], b["v"]])
+    log_audit(db, u.id, "export", {"kind": "bars"})
+    db.commit()
     return _csv_response(buf, "bars.csv")

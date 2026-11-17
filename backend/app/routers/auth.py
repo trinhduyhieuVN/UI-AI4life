@@ -12,6 +12,7 @@ from .. import auth
 from ..config import SETTINGS
 from ..db import get_db
 from ..roles import caps_for
+from ..services.audit import log_audit
 from ..models import (
     Prefs,
     Review,
@@ -98,6 +99,7 @@ def login(body: LoginIn, request: Request, response: Response, db: OrmSession = 
     if not u.password_hash.startswith("argon2id$"):
         u.password_hash = auth.hash_password(body.password)
     p = _ensure_prefs(db, u)
+    log_audit(db, u.id, "login")
     token = auth.create_session(db, u, request.headers.get("user-agent", ""))
     response.set_cookie(
         SETTINGS.cookie_name,
@@ -121,7 +123,8 @@ def logout(request: Request, response: Response, u: User = Depends(auth.current_
     )
     if row is not None:
         db.delete(row)
-        db.commit()
+    log_audit(db, u.id, "logout")
+    db.commit()
     response.delete_cookie(SETTINGS.cookie_name, path="/")
     return {"ok": True}
 

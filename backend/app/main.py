@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 
 from .routers import (
+    audit as audit_router,
     auth as auth_router,
+    data as data_router,
     export as export_router,
     market as market_router,
     prefs as prefs_router,
@@ -22,4 +24,6 @@ def create_app() -> FastAPI:
     app.include_router(signals_router.router)
     app.include_router(reviews_router.router)
     app.include_router(export_router.router)
+    app.include_router(audit_router.router)
+    app.include_router(data_router.router)
     return app

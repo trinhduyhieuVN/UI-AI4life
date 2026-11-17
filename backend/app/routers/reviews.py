@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session as OrmSession
 from .. import auth
 from ..db import get_db
 from ..models import Review, SignalEvent, User, now
+from ..services.audit import log_audit
 
 router = APIRouter(prefix="/api/v1/reviews", tags=["reviews"])
 
@@ -43,5 +44,6 @@ def save_review(body: ReviewIn, u: User = Depends(auth.require_cap("review")), d
     r.label = body.label
     r.reviewer_name = u.username
     r.at = now()
+    log_audit(db, u.id, "review", {"event_id": body.event_id, "label": body.label})
     db.commit()
     return {"review": {"event_id": r.event_id, "label": r.label, "reviewer": r.reviewer_name, "at": r.at}}
