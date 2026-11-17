@@ -27,7 +27,13 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) {
+    /* Chỉ 4 endpoint đọc bất biến (seed tất định) được cache-first + cập nhật ngầm;
+       /auth, /prefs, /watchlist, /views, /reviews… luôn đi mạng. */
+    if (/^\/api\/v1\/(symbols|sessions|bars|signals)$/.test(url.pathname)) e.respondWith(apiCacheFirst(e, req));
+    return;
+  }
   e.respondWith(
     fetch(req)
       .then(res => {
@@ -42,3 +48,12 @@ self.addEventListener('fetch', e => {
       })
   );
 });
+
+async function apiCacheFirst(e, req) {
+  const cache = await caches.open(CACHE);
+  const refresh = fetch(req).then(res => { if (res.ok) cache.put(req, res.clone()); return res; }).catch(() => null);
+  e.waitUntil(refresh.then(() => {}));
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  return (await refresh) || Response.error();
+}

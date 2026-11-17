@@ -1,3 +1,5 @@
+import { isOffline, OFFLINE_WRITE_MSG } from './offline.js';
+
 export class ApiError extends Error {
   constructor(status, detail, cap) {
     super(typeof detail === 'string' ? detail : (detail && detail.detail) || 'Lỗi máy chủ');
@@ -9,6 +11,7 @@ export class ApiError extends Error {
 
 /* Gọi API cùng origin (cookie phiên HttpOnly). 401 phát sự kiện 'nq-unauth'. */
 export async function api(path, { method = 'GET', body } = {}) {
+  if (method !== 'GET' && isOffline()) throw new ApiError(0, OFFLINE_WRITE_MSG);
   const opt = { method, credentials: 'same-origin', headers: {} };
   if (body !== undefined) {
     opt.headers['Content-Type'] = 'application/json';

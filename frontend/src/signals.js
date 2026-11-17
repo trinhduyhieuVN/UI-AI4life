@@ -1,5 +1,6 @@
 import { S, D, $, curRole, USER, TFS, MINUTES } from './state.js';
 import { api, apiBlob } from './api.js';
+import { isOffline, loadOffline, saveSession } from './offline.js';
 import { nfmt, hhmm, fmtDateShort, escapeHtml } from './util.js';
 import { toast, toastApiError } from './ui/toasts.js';
 import { download } from './chart/renderer.js';
@@ -30,8 +31,15 @@ export function ensureSignals() {
   const params = new URLSearchParams({ date, tf: S.tf, scope: r.sigScope, cursor: S.tf === '1D' ? String(S.si) : '389' });
   if (r.sigScope === 'symbol') params.set('symbol', S.sym);
   const p = api('/signals?' + params.toString())
-    .then(res => { D.sigCache.set(key, res.signals); sigPending.delete(key); D.sigDirty = true; return res.signals; })
-    .catch(e => { sigPending.delete(key); throw e; });
+    .then(res => { D.sigCache.set(key, res.signals); sigPending.delete(key); D.sigDirty = true; saveSession(S.sym, S.si, null, res.signals); return res.signals; })
+    .catch(async e => {
+      sigPending.delete(key);
+      if (isOffline()) {
+        const rec = await loadOffline(S.sym, S.si);
+        if (rec && rec.tf === S.tf && rec.signals && rec.signals.length) { D.sigCache.set(key, rec.signals); D.sigDirty = true; return rec.signals; }
+      }
+      throw e;
+    });
   sigPending.set(key, p);
   return p;
 }

@@ -6,6 +6,7 @@ import { toast } from './ui/toasts.js';
 import { fmtDate } from './util.js';
 import { audio, blip, chime, tickSound } from './sound.js';
 import { loadMeta, loadSeries, prefetchWatch, fetchViews } from './data.js';
+import { isOffline } from './offline.js';
 import { restorePrefs, persist } from './prefs.js';
 import { applyRole } from './roles.js';
 import {
@@ -139,8 +140,10 @@ function wire() {
 
   /* top */
   $('nq-session').addEventListener('change', function () {
-    S.si = +this.value; D.acc = 0; D.QCACHE = {}; loadSeries(true); renderList(); D.dirty = true; persist(); touch(true);
-    toast('Phiên ' + fmtDate(D.SESSIONS[S.si]), { ms: 2000 });
+    S.si = +this.value; D.acc = 0; D.QCACHE = {};
+    loadSeries(true).then(() => toast('Phiên ' + fmtDate(D.SESSIONS[S.si]), { ms: 2000 }))
+      .catch(e => { if (e.status !== 401) toast(e.message); });
+    renderList(); D.dirty = true; persist(); touch(true);
   });
   $('nq-sound').addEventListener('click', () => { S.sound = !S.sound; tg('nq-t-sound', S.sound); syncControls(); persist(); if (S.sound) { audio(); blip(880, 0.08, 0.04); } toast('Âm thanh ' + (S.sound ? 'bật' : 'tắt'), { ms: 1800 }); });
   $('nq-user').addEventListener('click', userMenu);
@@ -196,8 +199,9 @@ function wire() {
   $('nq-c-tf').addEventListener('change', function () {
     if (curRole().tfs.indexOf(this.value) < 0) { this.value = S.tf; toast('Vai trò ' + curRole().label + ' chỉ dùng khung ' + curRole().tfs.join(', ') + '.', { kind: 'warn', ms: 2600 }); return; }
     S.tf = this.value; D.acc = 0; D.QCACHE = {};
-    loadSeries(true); persist(); renderList(); D.dirty = true;
-    toast('Khung ' + S.tf + ' · ' + D.total + ' nến', { ms: 2000 });
+    loadSeries(true).then(() => toast('Khung ' + S.tf + ' · ' + D.total + ' nến', { ms: 2000 }))
+      .catch(e => { if (e.status !== 401) toast(e.message); });
+    persist(); renderList(); D.dirty = true;
   });
   $('nq-c-density').addEventListener('input', function () { S.density = +this.value / 100; $('nq-o-density').textContent = this.value + '%'; setRangeFill(this); D.dirty = true; persist(); });
   $('nq-c-zoom').addEventListener('input', function () { S.view.count = +this.value; $('nq-o-zoom').textContent = this.value; setRangeFill(this); clampView(); D.dirty = true; });
@@ -228,8 +232,10 @@ function wire() {
     const sym = pool[Math.floor(Math.random() * pool.length)];
     S.si = Math.floor(Math.random() * D.SESSIONS.length); $('nq-session').value = S.si;
     S.sym = sym; D.acc = 0; D.QCACHE = {}; S.follow = true; tg('nq-t-follow', true);
-    loadSeries(true); renderList(); setPlaying(true);
-    toast('Ngẫu nhiên: ' + sym + ' · phiên ' + fmtDate(D.SESSIONS[S.si]), { kind: 'ok', ms: 2600 });
+    loadSeries(true).then(() => {
+      renderList(); setPlaying(true);
+      toast('Ngẫu nhiên: ' + sym + ' · phiên ' + fmtDate(D.SESSIONS[S.si]), { kind: 'ok', ms: 2600 });
+    }).catch(e => { if (e.status !== 401) toast(e.message); });
   });
   $('nq-a-png').addEventListener('click', exportPNG);
   $('nq-a-csv').addEventListener('click', exportCSV);
@@ -268,6 +274,19 @@ function wire() {
 }
 
 /* ---------- boot ---------- */
+/* Online lại: máy chủ thắng — nạp lại prefs/caps, giữ nguyên sym/si/cursor đang xem. */
+async function resyncServer() {
+  try {
+    const me = await api('/auth/me');
+    const prevTf = S.tf;
+    setSession(me);
+    restorePrefs();
+    applyRole();
+    if (S.tf !== prevTf) await loadSeries(false);
+    syncAll(); renderList(); renderViews();
+  } catch (e) { /* vẫn offline hoặc hết phiên — nq-unauth xử lý */ }
+}
+
 async function boot() {
   D.hooks.onEnter = onEnter;
   D.hooks.onLeave = onLeave;
@@ -285,6 +304,10 @@ async function boot() {
     installEvt.prompt();
     installEvt.userChoice.finally(() => { installEvt = null; $('nq-install').hidden = true; });
   });
+  const syncOfflineBanner = () => { $('nq-offline-banner').hidden = !isOffline(); };
+  window.addEventListener('offline', syncOfflineBanner);
+  window.addEventListener('online', () => { syncOfflineBanner(); resyncServer(); });
+  syncOfflineBanner();
   try {
     const me = await api('/auth/me');
     enterApp(me);

@@ -1,5 +1,6 @@
 import { S, D, $, curRole } from './state.js';
-import { api } from './api.js';
+import { api, ApiError } from './api.js';
+import { isOffline, loadOffline, saveSession, OFFLINE_NODATA_MSG } from './offline.js';
 import { clampView, followView, defaultCount, syncAll } from './ui/transport.js';
 
 let metaPromise = null;
@@ -23,7 +24,15 @@ export function ensureSeries(sym, si, tf) {
   if (seriesPending.has(key)) return seriesPending.get(key);
   const p = api('/bars?symbol=' + encodeURIComponent(sym) + '&date=' + encodeURIComponent(D.SESSIONS[si]) + '&tf=' + encodeURIComponent(tf))
     .then(r => { D.seriesCache.set(key, r.bars); seriesPending.delete(key); return r.bars; })
-    .catch(e => { seriesPending.delete(key); throw e; });
+    .catch(async e => {
+      seriesPending.delete(key);
+      if (isOffline()) {
+        const rec = await loadOffline(sym, si);
+        if (rec && rec.tf === tf && rec.bars && rec.bars.length) { D.seriesCache.set(key, rec.bars); return rec.bars; }
+        throw new ApiError(0, OFFLINE_NODATA_MSG);
+      }
+      throw e;
+    });
   seriesPending.set(key, p);
   return p;
 }
@@ -35,6 +44,7 @@ export async function loadSeries(resetCursor) {
   const bars = await ensureSeries(S.sym, S.si, tf);
   if (tok !== loadToken) return;
   D.bars = bars; D.total = bars.length; D.HAC = {};
+  saveSession(S.sym, S.si, bars, null);
   const maxCount = tf === '1D' ? Math.max(11, D.total) : 390;
   $('nq-c-zoom').max = maxCount;
   $('nq-c-zoom').min = tf === '1D' ? 4 : 14;
