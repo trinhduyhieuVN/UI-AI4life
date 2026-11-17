@@ -61,10 +61,13 @@ def test_blind_not_persisted(client):
 
 def test_caps_matrix(client):
     app = client.app
+    from fastapi.routing import APIRoute
     for cap in MATRIX["observer"]:
         def _probe(u=Depends(auth.require_cap(cap))):
             return {"ok": True}
-        app.get(f"/api/v1/_probe/{cap}")(_probe)
+        # Chèn trước mount static catch-all "/" để route probe không bị che;
+        # APIRoute tạo tay cần dependency_overrides_provider để nhận override get_db của fixture.
+        app.router.routes.insert(-1, APIRoute(f"/api/v1/_probe/{cap}", endpoint=_probe, methods=["GET"], dependency_overrides_provider=app))
     for role, expect in MATRIX.items():
         _auth(client, "cap_" + role, role)
         for cap, code in expect.items():

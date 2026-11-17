@@ -25,7 +25,7 @@ def client(db):
     from app.db import get_db
     from app.main import create_app
 
-    app = create_app()
+    app = create_app(seed_data=False)
 
     def _get():
         yield db

@@ -30,7 +30,7 @@ def loaded_engine(tmp_path_factory):
 @pytest.fixture()
 def mclient(loaded_engine):
     with sessionmaker(bind=loaded_engine, expire_on_commit=False)() as s:
-        app = create_app()
+        app = create_app(seed_data=False)
 
         def _get():
             yield s

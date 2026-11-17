@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nasdaq Replay — XNAS.ITCH Historical</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="nq-root" data-theme="workbench">
+  <div class="nq-bg" aria-hidden="true"></div>
+
+  <!-- ================= AUTH ================= -->
+  <section class="nq-auth" id="nq-auth" hidden>
+    <div class="nq-auth-brand">
+      <div class="nq-mark">
+        <div class="nq-mark-g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 5-8 4 5"/></svg></div>
+        <div><div class="nq-mark-t">Nasdaq Replay</div><div class="nq-mark-s">XNAS.ITCH · Historical</div></div>
+      </div>
+      <h1>XEM LẠI<em>PHIÊN THẬT.</em></h1>
+      <p class="nq-tagline">Mở một phiên giao dịch trong quá khứ và xem nó diễn ra như đang chạy thật — từng cây nến hiện dần, không hề biết trước nến tiếp theo.</p>
+      <div class="nq-tape"><div class="nq-tape-in" id="nq-tape"></div></div>
+      <ul class="nq-auth-points">
+        <li><i class="nq-dot"></i><span><b>Phát lại từng nến</b> — play / pause / tua 0.5× đến 64×, tua tới lui bất kỳ điểm nào trong phiên.</span></li>
+        <li><i class="nq-dot"></i><span><b>Không nhìn trước</b> — phần chưa diễn ra bị khoá hoàn toàn, đúng kỷ luật as-of của dữ liệu lịch sử.</span></li>
+        <li><i class="nq-dot"></i><span><b>Danh sách riêng</b> — mỗi tài khoản một watchlist, khung nhìn đã lưu và tuỳ chọn biểu đồ.</span></li>
+        <li><i class="nq-dot"></i><span><b>50 mã Nasdaq</b> — nến 1 phút / 5 phút / 15 phút / 1 giờ / 1 ngày, 11 phiên gần nhất.</span></li>
+      </ul>
+      <svg class="nq-auth-art" viewBox="0 0 560 300" fill="none" aria-hidden="true"><path d="M22 170V209" stroke="currentColor" stroke-width="1.5"/><rect x="16" y="179" width="12" height="10" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M47 140V192" stroke="currentColor" stroke-width="1.5"/><rect x="41" y="157" width="12" height="22" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M72 117V163" stroke="currentColor" stroke-width="1.5"/><rect x="66" y="133" width="12" height="23" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M97 121V141" stroke="currentColor" stroke-width="1.5"/><rect x="91" y="128" width="12" height="5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M122 100V137" stroke="currentColor" stroke-width="1.5"/><rect x="116" y="122" width="12" height="5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M147 89V147" stroke="currentColor" stroke-width="1.5"/><rect x="141" y="107" width="12" height="15" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M172 93V134" stroke="currentColor" stroke-width="1.5"/><rect x="166" y="107" width="12" height="3" stroke="currentColor" stroke-width="1.5"/><path d="M197 62V121" stroke="currentColor" stroke-width="1.5"/><rect x="191" y="85" width="12" height="23" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M222 58V97" stroke="currentColor" stroke-width="1.5"/><rect x="216" y="66" width="12" height="19" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M247 56V97" stroke="currentColor" stroke-width="1.5"/><rect x="241" y="66" width="12" height="13" stroke="currentColor" stroke-width="1.5"/><path d="M272 66V101" stroke="currentColor" stroke-width="1.5"/><rect x="266" y="79" width="12" height="4" stroke="currentColor" stroke-width="1.5"/><path d="M297 54V94" stroke="currentColor" stroke-width="1.5"/><rect x="291" y="61" width="12" height="22" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M322 46V80" stroke="currentColor" stroke-width="1.5"/><rect x="316" y="61" width="12" height="6" stroke="currentColor" stroke-width="1.5"/><path d="M347 53V82" stroke="currentColor" stroke-width="1.5"/><rect x="341" y="68" width="12" height="3" stroke="currentColor" stroke-width="1.5"/><path d="M372 50V93" stroke="currentColor" stroke-width="1.5"/><rect x="366" y="70" width="12" height="12" stroke="currentColor" stroke-width="1.5"/><path d="M397 65V107" stroke="currentColor" stroke-width="1.5"/><rect x="391" y="82" width="12" height="3" stroke="currentColor" stroke-width="1.5"/><path d="M422 72V118" stroke="currentColor" stroke-width="1.5"/><rect x="416" y="83" width="12" height="9" stroke="currentColor" stroke-width="1.5"/><path d="M447 58V114" stroke="currentColor" stroke-width="1.5"/><rect x="441" y="72" width="12" height="20" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M472 38V79" stroke="currentColor" stroke-width="1.5"/><rect x="466" y="53" width="12" height="18" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".28"/><path d="M497 32V77" stroke="currentColor" stroke-width="1.5"/><rect x="491" y="53" width="12" height="6" stroke="currentColor" stroke-width="1.5"/><path d="M522 47V95" stroke="currentColor" stroke-width="1.5"/><rect x="516" y="59" width="12" height="16" stroke="currentColor" stroke-width="1.5"/><path d="M547 58V93" stroke="currentColor" stroke-width="1.5"/><rect x="541" y="75" width="12" height="3" stroke="currentColor" stroke-width="1.5"/><polyline points="22,184 47,168 72,145 97,131 122,125 147,115 172,108 197,97 222,76 247,73 272,82 297,72 322,64 347,69 372,76 397,83 422,88 447,82 472,63 497,56 522,67 547,77" stroke="var(--mg)" stroke-width="2" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="nq-auth-card">
+      <div class="nq-card">
+        <div class="nq-tabs" role="tablist">
+          <button role="tab" id="nq-tab-login" aria-selected="true" aria-controls="nq-form-login">Đăng nhập</button>
+          <button role="tab" id="nq-tab-reg" aria-selected="false" aria-controls="nq-form-reg">Đăng ký</button>
+        </div>
+
+        <form class="nq-form" id="nq-form-login" novalidate>
+          <div><div class="nq-form-h">Chào trở lại</div></div>
+          <p class="nq-form-s">Đăng nhập để mở watchlist và khung nhìn của riêng bạn.</p>
+          <div class="nq-field"><label class="nq-lbl" for="nq-li-u">Tên đăng nhập</label>
+            <input class="nq-inp" id="nq-li-u" autocomplete="username" placeholder="vd: hieu.trinh" spellcheck="false"></div>
+          <div class="nq-field"><label class="nq-lbl" for="nq-li-p">Mật khẩu</label>
+            <div class="nq-pw"><input class="nq-inp" id="nq-li-p" type="password" autocomplete="current-password" placeholder="••••••••">
+              <button type="button" data-pw="nq-li-p" aria-label="Hiện mật khẩu"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+          <div class="nq-field"><label class="nq-lbl" for="nq-li-role">Kiểu khách hàng</label>
+            <select class="nq-inp" id="nq-li-role"></select>
+            <div class="nq-role-desc" id="nq-li-role-desc"></div></div>
+          <div class="nq-err" id="nq-li-err" role="alert"></div>
+          <button class="nq-btn pri" type="submit" style="height:42px">Đăng nhập</button>
+          <button class="nq-btn nq-demo" type="button" id="nq-demo">Vào nhanh bằng tài khoản demo</button>
+        </form>
+
+        <form class="nq-form" id="nq-form-reg" novalidate hidden>
+          <div><div class="nq-form-h">Tạo tài khoản</div></div>
+          <p class="nq-form-s">Watchlist, khung nhìn và tuỳ chọn được lưu riêng theo tài khoản.</p>
+          <div class="nq-field"><label class="nq-lbl" for="nq-rg-u">Tên đăng nhập</label>
+            <input class="nq-inp" id="nq-rg-u" autocomplete="username" placeholder="3–24 ký tự, a-z 0-9 _" spellcheck="false"></div>
+          <div class="nq-field"><label class="nq-lbl" for="nq-rg-e">Email <span style="text-transform:none;letter-spacing:0;color:var(--dim)">(tuỳ chọn)</span></label>
+            <input class="nq-inp" id="nq-rg-e" type="email" autocomplete="email" placeholder="ban@vidu.com"></div>
+          <div class="nq-row2">
+            <div class="nq-field"><label class="nq-lbl" for="nq-rg-p">Mật khẩu</label>
+              <div class="nq-pw"><input class="nq-inp" id="nq-rg-p" type="password" autocomplete="new-password" placeholder="≥ 8 ký tự">
+                <button type="button" data-pw="nq-rg-p" aria-label="Hiện mật khẩu"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+            <div class="nq-field"><label class="nq-lbl" for="nq-rg-p2">Nhập lại</label>
+              <input class="nq-inp" id="nq-rg-p2" type="password" autocomplete="new-password" placeholder="••••••••"></div>
+          </div>
+          <div class="nq-field"><label class="nq-lbl" for="nq-rg-role">Kiểu khách hàng</label>
+            <select class="nq-inp" id="nq-rg-role"></select>
+            <div class="nq-role-desc" id="nq-rg-role-desc"></div></div>
+          <div class="nq-meter"><i id="nq-rg-meter"></i></div>
+          <div class="nq-err" id="nq-rg-err" role="alert"></div>
+          <button class="nq-btn pri" type="submit" style="height:42px">Tạo tài khoản &amp; đăng nhập</button>
+        </form>
+
+        <p class="nq-auth-note"><b>Máy chủ riêng.</b> Tài khoản được băm bằng argon2id và lưu trong SQLite trên máy chủ của bạn — không gửi cho bên thứ ba. Bản sao lưu chỉ chứa dữ liệu, không chứa mật khẩu.</p>
+        <button class="nq-btn sm nq-data-link" id="nq-data-auth" hidden>Quản lý dữ liệu &amp; sao lưu</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= APP ================= -->
+  <div class="nq-app" id="nq-app" hidden>
+    <div class="nq-top" role="banner">
+      <button class="nq-btn ico sm nq-railtoggle" id="nq-railtoggle" aria-label="Mở danh sách mã">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <h1 class="nq-page-t">Phát lại phiên Nasdaq</h1>
+      <div class="nq-live"><i></i><span>Lịch sử</span></div>
+      <div class="nq-clock mono" id="nq-clock">09:30:00<small>ET</small></div>
+      <div class="nq-sep"></div>
+      <label class="nq-lbl" for="nq-session" style="flex:none">Phiên</label>
+      <select class="nq-inp" id="nq-session" style="height:32px;width:136px;font-size:12.5px"></select>
+      <div class="nq-spacer"></div>
+      <div class="nq-src" title="Chưa nối Databento — đang dùng dữ liệu mẫu có hạt giống, tất định"><i></i>DỮ LIỆU MẪU</div>
+      <span class="nq-rolechip" id="nq-rolechip">NĐT cá nhân</span>
+      <button class="nq-btn ico" id="nq-sound" aria-pressed="true" aria-label="Tắt âm thanh" title="Âm thanh: bật">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
+      <button class="nq-user" id="nq-user" aria-haspopup="menu"><span class="nq-av" id="nq-av">D</span><b id="nq-uname">demo</b>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+
+    <main class="nq-main">
+      <!-- rail -->
+      <aside class="nq-rail" id="nq-rail">
+        <div class="nq-rail-brand">
+          <div class="nq-mark">
+            <div class="nq-mark-g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 5-8 4 5"/></svg></div>
+            <div class="nq-brand"><b>Nasdaq Replay</b><span>XNAS.ITCH · historical</span></div>
+          </div>
+          <div class="nq-sessionpanel">
+            <span>Phiên đang mở</span>
+            <strong id="nq-rail-sess">—</strong>
+            <span id="nq-rail-sub">Lịch sử · khoá nhìn trước</span>
+          </div>
+        </div>
+        <div class="nq-rail-h">
+          <div class="nq-rail-t"><h2>Danh sách mã</h2>
+            <button class="nq-btn sm" id="nq-selectmode" aria-pressed="false">Chọn</button></div>
+          <div class="nq-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="nq-inp" id="nq-q" placeholder="Tìm mã hoặc tên công ty…" spellcheck="false" autocomplete="off">
+          </div>
+          <div class="nq-rail-tools">
+            <select class="nq-inp" id="nq-sort" aria-label="Sắp xếp">
+              <option value="manual">Thứ tự của tôi</option>
+              <option value="name">Tên A → Z</option>
+              <option value="chg">% thay đổi</option>
+              <option value="vol">Khối lượng</option>
+              <option value="px">Giá</option>
+            </select>
+            <button class="nq-btn ico sm" id="nq-adddlg" aria-label="Thêm mã" title="Thêm mã">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+        </div>
+        <div class="nq-views" id="nq-views"></div>
+        <div class="nq-list" id="nq-list" role="list"></div>
+        <div class="nq-bulk" id="nq-bulk" hidden>
+          <span id="nq-bulk-n">0 đã chọn</span>
+          <button class="nq-btn sm dgr" id="nq-bulk-del">Xoá</button>
+          <button class="nq-btn sm" id="nq-bulk-clear">Bỏ chọn</button>
+        </div>
+        <div class="nq-rail-f">
+          <button class="nq-btn sm" id="nq-saveview">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+            Lưu khung nhìn</button>
+          <button class="nq-btn sm" id="nq-resetlist" title="Khôi phục danh sách gốc">Gốc</button>
+        </div>
+      </aside>
+
+      <!-- stage -->
+      <section class="nq-stage">
+        <div class="nq-chart-h">
+          <button class="nq-btn sm nq-typebtn" id="nq-typebtn" aria-haspopup="listbox" aria-expanded="false"></button>
+          <div class="nq-ch-id"><b id="nq-ch-sym">AAPL</b><span id="nq-ch-name">Apple Inc.</span><span class="nq-exch">NASDAQ</span></div>
+          <div class="nq-ch-px"><b id="nq-ch-px">—</b><i id="nq-ch-chg">—</i></div>
+          <div class="nq-ohlc" id="nq-ohlc"></div>
+          <div class="nq-legend" id="nq-legend"></div>
+        </div>
+        <div class="nq-canvas-wrap" id="nq-wrap">
+          <canvas id="nq-chart"></canvas>
+          <div class="nq-badge"><span id="nq-b-tf">1m</span><span id="nq-b-count">0/390 nến</span><span class="hot" id="nq-b-state">TẠM DỪNG</span></div>
+          <button class="nq-btn sm nq-follow" id="nq-follow" hidden>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+            Bám nến mới</button>
+        </div>
+        <div class="nq-transport">
+          <div class="nq-tr-btns">
+            <button class="nq-btn ico" id="nq-start" aria-label="Về đầu phiên" title="Về đầu phiên (Home)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14l-11-7z"/></svg></button>
+            <button class="nq-btn ico" id="nq-prev" aria-label="Lùi một nến" title="Lùi một nến (←)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg></button>
+            <button class="nq-play" id="nq-play" aria-label="Phát" title="Phát / tạm dừng (Space)"></button>
+            <button class="nq-btn ico" id="nq-next" aria-label="Tiến một nến" title="Tiến một nến (→)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m10 6 6 6-6 6"/></svg></button>
+            <button class="nq-btn ico" id="nq-end" aria-label="Tới cuối phiên" title="Tới cuối phiên (End)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+          </div>
+          <div class="nq-scrub">
+            <input type="range" id="nq-scrub" min="0" max="389" value="0" step="1" aria-label="Tua phiên">
+            <div class="nq-scrub-t"><span id="nq-sc-a">09:30</span><b id="nq-sc-pct">0%</b><span id="nq-sc-b">16:00</span></div>
+          </div>
+          <div class="nq-speed">
+            <button class="nq-btn ico sm" id="nq-spd-dn" aria-label="Giảm tốc độ">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+            <span class="nq-speed-v mono" id="nq-spd-v">1×</span>
+            <button class="nq-btn ico sm" id="nq-spd-up" aria-label="Tăng tốc độ">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+        </div>
+        <section class="nq-signal" id="nq-signal" aria-label="Tín hiệu bất thường mẫu">
+          <div class="nq-sig-h">
+            <button class="nq-btn ico sm" id="nq-sig-t" aria-expanded="true" aria-label="Thu gọn bảng tín hiệu">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+            <h2>Tín hiệu bất thường</h2>
+            <span class="nq-src"><i></i>DỮ LIỆU MẪU</span>
+            <span class="nq-sig-mode" id="nq-sig-mode"></span>
+            <span class="nq-spacer"></span>
+            <span class="nq-sig-asof" id="nq-sig-asof">—</span>
+            <div class="nq-sig-f" id="nq-sig-f" role="group" aria-label="Lọc tín hiệu">
+              <button class="nq-chip" data-f="all" aria-pressed="true">Tất cả</button>
+              <button class="nq-chip" data-f="alert" aria-pressed="false">Cảnh báo</button>
+              <button class="nq-chip" data-f="suppressed" aria-pressed="false">Bị chặn</button>
+              <button class="nq-chip" data-f="quality" aria-pressed="false">Chất lượng</button>
+            </div>
+            <button class="nq-btn sm" id="nq-sig-blind" aria-pressed="false" hidden title="Ẩn điểm số khi rà soát để tránh thiên kiến">Rà soát mù</button>
+            <button class="nq-btn sm" id="nq-sig-csv" hidden>Xuất CSV</button>
+            <span class="nq-sig-n" id="nq-sig-n">0</span>
+          </div>
+          <div class="nq-sig-b" id="nq-sig-b"></div>
+        </section>
+      </section>
+
+      <!-- controls -->
+      <aside class="nq-controls" id="nq-controls">
+        <div class="nq-ctl-h"><h2>Bảng điều khiển</h2><span class="nq-lbl" id="nq-ctl-count">19 mục</span></div>
+        <div class="nq-ctl-scroll" id="nq-ctl-scroll">
+
+        <div class="nq-sec">
+          <div class="nq-sec-t"><h3>Phát lại</h3></div>
+          <div class="nq-c"><div class="nq-c-h"><label for="nq-c-speed">Tốc độ phát</label><output id="nq-o-speed">1×</output></div>
+            <input type="range" id="nq-c-speed" min="0" max="7" step="1" value="1"></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-follow">Bám theo nến mới</label>
+            <button class="nq-tg" id="nq-t-follow" role="switch" aria-checked="true" aria-pressed="true" aria-label="Bám theo nến mới"></button></div></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-loop">Lặp lại phiên</label>
+            <button class="nq-tg" id="nq-t-loop" role="switch" aria-checked="false" aria-pressed="false" aria-label="Lặp lại phiên"></button></div></div>
+          <div class="nq-c"><div class="nq-c-row"><label>Nến mỗi giây ở 1×</label>
+            <div class="nq-step"><button id="nq-rate-dn" aria-label="Giảm">−</button><output id="nq-rate-v">2.0</output><button id="nq-rate-up" aria-label="Tăng">+</button></div></div></div>
+        </div>
+
+        <div class="nq-sec">
+          <div class="nq-sec-t"><h3>Khung nhìn</h3></div>
+          <div class="nq-c"><div class="nq-c-h"><label for="nq-c-tf">Khung thời gian</label></div>
+            <select class="nq-inp" id="nq-c-tf" style="height:32px;font-size:12.5px">
+              <option value="1m">1 phút — 390 nến</option><option value="5m">5 phút — 78 nến</option>
+              <option value="15m">15 phút — 26 nến</option><option value="1h">1 giờ — 7 nến</option>
+              <option value="1D">1 ngày — 11 phiên</option></select></div>
+          <div class="nq-c"><div class="nq-c-h"><label for="nq-c-density">Độ rộng thân nến</label><output id="nq-o-density">70%</output></div>
+            <input type="range" id="nq-c-density" min="20" max="100" step="1" value="70"></div>
+          <div class="nq-c"><div class="nq-c-h"><label for="nq-c-zoom">Số nến hiển thị</label><output id="nq-o-zoom">90</output></div>
+            <input type="range" id="nq-c-zoom" min="14" max="390" step="1" value="90"></div>
+          <div class="nq-c"><div class="nq-c-h"><label for="nq-c-vol">Chiều cao khối lượng</label><output id="nq-o-vol">26%</output></div>
+            <input type="range" id="nq-c-vol" min="0" max="46" step="1" value="26"></div>
+        </div>
+
+        <div class="nq-sec">
+          <div class="nq-sec-t"><h3>Lớp phủ</h3></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-ma1">MA nhanh</label>
+            <div class="nq-step"><button id="nq-ma1-dn" aria-label="Giảm chu kỳ MA nhanh">−</button><output id="nq-ma1-v">9</output><button id="nq-ma1-up" aria-label="Tăng chu kỳ MA nhanh">+</button>
+              <button class="nq-tg" id="nq-t-ma1" role="switch" aria-checked="true" aria-pressed="true" aria-label="Bật MA nhanh"></button></div></div></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-ma2">MA chậm</label>
+            <div class="nq-step"><button id="nq-ma2-dn" aria-label="Giảm chu kỳ MA chậm">−</button><output id="nq-ma2-v">21</output><button id="nq-ma2-up" aria-label="Tăng chu kỳ MA chậm">+</button>
+              <button class="nq-tg" id="nq-t-ma2" role="switch" aria-checked="true" aria-pressed="true" aria-label="Bật MA chậm"></button></div></div></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-vwap">VWAP phiên</label>
+            <button class="nq-tg" id="nq-t-vwap" role="switch" aria-checked="true" aria-pressed="true" aria-label="Bật VWAP"></button></div></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-grid">Lưới toạ độ</label>
+            <button class="nq-tg" id="nq-t-grid" role="switch" aria-checked="true" aria-pressed="true" aria-label="Bật lưới"></button></div></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-cross">Crosshair</label>
+            <button class="nq-tg" id="nq-t-cross" role="switch" aria-checked="true" aria-pressed="true" aria-label="Bật crosshair"></button></div></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-future">Khoá vùng chưa diễn ra</label>
+            <button class="nq-tg" id="nq-t-future" role="switch" aria-checked="true" aria-pressed="true" aria-label="Khoá vùng chưa diễn ra"></button></div></div>
+        </div>
+
+        <div class="nq-sec">
+          <div class="nq-sec-t"><h3>Hiển thị</h3></div>
+          <div class="nq-c"><div class="nq-c-h"><label for="nq-c-theme">Bảng màu</label></div>
+            <select class="nq-inp" id="nq-c-theme" style="height:32px;font-size:12.5px">
+              <option value="workbench">Workbench — nền sáng (mặc định)</option>
+              <option value="midnight">Midnight — xanh đêm</option><option value="nasdaq">Nasdaq — xanh sàn</option>
+              <option value="phosphor">Phosphor — CRT lục</option><option value="daylight">Daylight — giấy ấm</option></select></div>
+          <div class="nq-c"><div class="nq-c-h"><label for="nq-c-glow">Cường độ phát sáng</label><output id="nq-o-glow">30%</output></div>
+            <input type="range" id="nq-c-glow" min="0" max="100" step="1" value="30"></div>
+          <div class="nq-c"><div class="nq-c-row"><label for="nq-t-sound">Âm thanh nến</label>
+            <button class="nq-tg" id="nq-t-sound" role="switch" aria-checked="true" aria-pressed="true" aria-label="Bật âm thanh"></button></div></div>
+        </div>
+        </div>
+
+        <div class="nq-sec">
+          <div class="nq-sec-t"><h3>Hành động</h3></div>
+          <div class="nq-acts">
+            <button class="nq-btn" id="nq-a-reset">Đặt lại</button>
+            <button class="nq-btn" id="nq-a-random">Ngẫu nhiên</button>
+            <button class="nq-btn" id="nq-a-png">Xuất PNG</button>
+            <button class="nq-btn" id="nq-a-csv">Xuất CSV</button>
+            <button class="nq-btn pri wide" id="nq-a-full">Toàn màn hình biểu đồ</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <div class="nq-status" role="contentinfo">
+      <span><b id="nq-st-sym">AAPL</b> · <span id="nq-st-tf">1m</span></span>
+      <span id="nq-st-bars">0/390 nến</span>
+      <span id="nq-st-sess">Phiên —</span>
+      <span class="nq-spacer"></span>
+      <span id="nq-st-src">Nguồn: mẫu tất định<span class="nq-src-long"> · chờ Databento XNAS.ITCH</span></span>
+      <span class="nq-kbd"><kbd>Space</kbd> phát <kbd>←</kbd><kbd>→</kbd> nến <kbd>+</kbd><kbd>−</kbd> tốc độ <kbd>R</kbd> đặt lại</span>
+    </div>
+  </div>
+
+  <div class="nq-scrim" id="nq-scrim" hidden></div>
+  <aside class="nq-drawer" id="nq-drawer" hidden aria-label="Chi tiết mã"></aside>
+  <div class="nq-toasts" id="nq-toasts" aria-live="polite"></div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
