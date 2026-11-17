@@ -1,7 +1,8 @@
 import { S, D, $, root, curRole, TFS } from '../state.js';
 import { nfmt, hhmm, fmtDateShort, rgba } from '../util.js';
 import { PAL } from '../ui/theme.js';
-import { toast } from '../ui/toasts.js';
+import { toast, toastApiError } from '../ui/toasts.js';
+import { apiBlob } from '../api.js';
 import { maArr, vwapArr } from './overlays.js';
 import { haArr } from './types.js';
 import { currentSymbolEvents, sigCursorMinute } from '../signals.js';
@@ -348,12 +349,9 @@ export function exportPNG() {
   toast('Đã xuất ảnh biểu đồ ' + S.sym + ' · ' + S.tf, { kind: 'ok' });
 }
 export function exportCSV() {
-  if (!curRole().csv) { toast('Vai trò ' + curRole().label + ' không xuất CSV nến.', { kind: 'warn', ms: 2600 }); return; }
-  const rows = ['timestamp_utc,symbol,session,timeframe,bar_index,open,high,low,close,volume'];
-  for (let i = 0; i <= S.cursor && i < D.total; i++) {
-    const b = D.bars[i];
-    rows.push([new Date(b.t).toISOString(), S.sym, D.SESSIONS[S.si], S.tf, i, b.o.toFixed(4), b.h.toFixed(4), b.l.toFixed(4), b.c.toFixed(4), b.v].join(','));
-  }
-  download('nasdaq-replay_' + S.sym + '_' + D.SESSIONS[S.si] + '_' + S.tf + '.csv', new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' }));
-  toast('Đã xuất ' + (S.cursor + 1) + ' nến đã hiện ra CSV (không gồm nến chưa diễn ra)', { kind: 'ok' });
+  const p = new URLSearchParams({ symbol: S.sym, date: D.SESSIONS[S.si], tf: S.tf });
+  apiBlob('/export/bars.csv?' + p.toString()).then(blob => {
+    download('nasdaq-replay_' + S.sym + '_' + D.SESSIONS[S.si] + '_' + S.tf + '.csv', blob);
+    toast('Đã xuất nến ' + S.sym + ' · ' + S.tf + ' ra CSV từ máy chủ', { kind: 'ok' });
+  }).catch(toastApiError);
 }

@@ -1,7 +1,7 @@
 import { S, D, $, curRole, USER, TFS, MINUTES } from './state.js';
-import { api } from './api.js';
+import { api, apiBlob } from './api.js';
 import { nfmt, hhmm, fmtDateShort, escapeHtml } from './util.js';
-import { toast } from './ui/toasts.js';
+import { toast, toastApiError } from './ui/toasts.js';
 import { download } from './chart/renderer.js';
 
 export const RLABEL = { noteworthy: 'Đáng chú ý', ordinary: 'Thông thường', uncertain: 'Không chắc chắn', data_error: 'Lỗi dữ liệu' };
@@ -140,19 +140,15 @@ export function saveReview(id, label) {
     D.reviews[id] = { label, reviewer: USER ? USER.username : '', at: Date.now() };
     D.sigDirty = true; renderSignals();
     toast('Đã gán nhãn “' + RLABEL[label] + '” · nhật ký rà soát mô phỏng lưu theo tài khoản', { kind: 'ok', ms: 2800 });
-  }).catch(e => { if (e.status !== 401) toast(e.message); });
+  }).catch(toastApiError);
 }
 
 export function exportSignalsCSV() {
   const r = curRole();
-  if (!r.sigCSV) { toast('Vai trò hiện tại không xuất CSV tín hiệu.', { kind: 'warn' }); return; }
-  if (S.blind) { toast('Đang rà soát mù — tắt mù trước khi xuất để tránh lộ điểm số.', { kind: 'warn' }); return; }
-  const evs = revealedEvents();
-  const rows = ['symbol,segment_id,timestamp,window_start,score,threshold,alert,reason,suppressed_reason,outbox,quality'];
-  evs.forEach(e => {
-    rows.push([e.sym, e.segmentId || '', new Date(e.tEnd).toISOString(), new Date(e.windowStart).toISOString(),
-      e.score.toFixed(4), e.threshold.toFixed(4), e.alert ? 1 : 0, e.reason, e.suppressedReason || '', e.outbox, e.quality].join(','));
-  });
-  download('nasdaq-signals-Mau_' + D.SESSIONS[S.si] + '.csv', new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' }));
-  toast('Đã xuất ' + evs.length + ' tín hiệu MẪU đã hiện ra CSV (không gồm phần chưa diễn ra)', { kind: 'ok' });
+  const p = new URLSearchParams({ date: D.SESSIONS[S.si], tf: S.tf, cursor: String(S.cursor), scope: r.sigScope, blind: S.blind ? '1' : '0' });
+  if (r.sigScope === 'symbol') p.set('symbol', S.sym);
+  apiBlob('/export/signals.csv?' + p.toString()).then(blob => {
+    download('nasdaq-signals-Mau_' + D.SESSIONS[S.si] + '.csv', blob);
+    toast('Đã xuất tín hiệu MẪU ra CSV từ máy chủ (không gồm phần chưa diễn ra)', { kind: 'ok' });
+  }).catch(toastApiError);
 }

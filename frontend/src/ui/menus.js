@@ -1,6 +1,7 @@
 import { $, root, curRole } from '../state.js';
 import { logout, setTab } from '../auth.js';
 import { rolePop } from '../roles.js';
+import { dataPop } from './migrate.js';
 
 export function popAt(el, cx, cy) {
   root.appendChild(el);
@@ -20,12 +21,15 @@ export function closePops() {
   const tb = $('nq-typebtn'); if (tb) tb.setAttribute('aria-expanded', 'false');
 }
 
-/* T11: đổi vai trò + tài khoản khác + đăng xuất. Mật khẩu (T12), dữ liệu (T17) nối sau. */
+/* Đổi vai trò + tài khoản khác + quản lý dữ liệu (theo cap) + đăng xuất. */
 export function userMenu() {
   closePops();
   const r = curRole();
   const m = document.createElement('div'); m.className = 'nq-menu';
-  m.innerHTML = '<button data-a="role">Đổi vai trò · ' + r.label + '</button><button data-a="new">Tài khoản khác</button><hr><button data-a="out" class="dgr">Đăng xuất</button>';
+  let h = '<button data-a="role">Đổi vai trò · ' + r.label + '</button><button data-a="new">Tài khoản khác</button>';
+  if (r.dataManager) h += '<button data-a="data">Quản lý dữ liệu</button>';
+  h += '<hr><button data-a="out" class="dgr">Đăng xuất</button>';
+  m.innerHTML = h;
   const ur = $('nq-user').getBoundingClientRect(), rr = root.getBoundingClientRect();
   popAt(m, ur.right - 184, ur.bottom + 6);
   m.style.left = Math.max(8, Math.min(ur.right - rr.left - 184, rr.width - 192)) + 'px';
@@ -35,5 +39,6 @@ export function userMenu() {
     if (a.dataset.a === 'out') logout();
     if (a.dataset.a === 'new') logout().then(() => setTab('register'));
     if (a.dataset.a === 'role') rolePop();
+    if (a.dataset.a === 'data') dataPop();
   });
 }

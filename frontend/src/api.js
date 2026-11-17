@@ -25,3 +25,16 @@ export async function api(path, { method = 'GET', body } = {}) {
   }
   return data;
 }
+
+/* Tải blob (CSV xuất từ máy chủ); lỗi vẫn ném ApiError để toast theo cap. */
+export async function apiBlob(path) {
+  const res = await fetch('/api/v1' + path, { credentials: 'same-origin' });
+  if (res.status === 401) window.dispatchEvent(new CustomEvent('nq-unauth'));
+  if (!res.ok) {
+    let d = null;
+    try { const j = await res.json(); d = j ? j.detail : null; } catch (e) { /* thân không phải JSON */ }
+    const cap = d && typeof d === 'object' ? d.cap : null;
+    throw new ApiError(res.status, d, cap);
+  }
+  return await res.blob();
+}
