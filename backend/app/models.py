@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, Float, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
 
@@ -20,6 +20,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String)
     created_at: Mapped[str] = mapped_column(String, default=now)
     is_demo: Mapped[int] = mapped_column(Integer, default=0)
+    prefs: Mapped["Prefs"] = relationship(uselist=False, lazy="joined")
 
 
 class Session(Base):

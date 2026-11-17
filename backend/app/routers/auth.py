@@ -1,6 +1,7 @@
 import hashlib
 import json
 import re
+from dataclasses import asdict
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session as OrmSession
 from .. import auth
 from ..config import SETTINGS
 from ..db import get_db
+from ..roles import caps_for
 from ..models import (
     Prefs,
     Review,
@@ -143,4 +145,4 @@ def me(u: User = Depends(auth.current_user), db: OrmSession = Depends(get_db)):
     }
     prefs = {"role": p.role, "theme": p.theme, "future": bool(p.future)}
     prefs.update(json.loads(p.chart_json or "{}"))
-    return {"user": _user_payload(u, p), "prefs": prefs, "watch": watch, "views": views, "reviews": reviews}
+    return {"user": _user_payload(u, p), "prefs": prefs, "caps": asdict(caps_for(u)), "watch": watch, "views": views, "reviews": reviews}

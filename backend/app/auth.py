@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session as OrmSession
 from .config import SETTINGS
 from .db import get_db
 from .models import Session as SessionRow, User
+from .roles import caps_for
 
 _ph = PasswordHasher()
 _rate: dict[str, list[float]] = {}
@@ -93,3 +94,27 @@ def login_guard(ip: str) -> None:
         raise HTTPException(429, "Quá nhiều lần đăng nhập — thử lại sau 1 phút")
     hits.append(t)
     _rate[ip] = hits
+
+
+CAP_CHECKS = {
+    "rail_rw": lambda c: c.rail == "rw",
+    "views": lambda c: c.views,
+    "sigCSV": lambda c: c.sigCSV,
+    "csv": lambda c: c.csv,
+    "review": lambda c: c.review,
+    "scope_all": lambda c: c.sigScope == "all",
+    "audit": lambda c: c.id in ("compliance", "regulator"),
+}
+
+
+def require_cap(cap: str):
+    check = CAP_CHECKS[cap]
+
+    def dep(u: User = Depends(current_user)) -> User:
+        if not check(caps_for(u)):
+            raise HTTPException(
+                403, {"detail": "Vai trò hiện tại không có quyền này", "cap": cap}
+            )
+        return u
+
+    return dep
