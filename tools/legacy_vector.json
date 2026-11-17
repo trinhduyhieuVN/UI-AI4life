@@ -1,0 +1,14 @@
+[
+  {
+    "pw": "probe-pass-1",
+    "salt": "00112233445566778899aabbccddeeff",
+    "kdf": "pbkdf2-sha256-150k",
+    "hash": "5dba9a0e39d2baf0549a3370ee2898beadb6ffa8347065b1c8d22caa668ac879"
+  },
+  {
+    "pw": "probe-pass-1",
+    "salt": "00112233445566778899aabbccddeeff",
+    "kdf": "sha256-iter-fallback",
+    "hash": "a79a7ef8d2c9de585f9eb57f7bad82fb9c07d4c5283dcd382a4ae65ff258ddcb"
+  }
+]
