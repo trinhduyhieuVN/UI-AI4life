@@ -1,4 +1,4 @@
-import { $, root, setSession } from './state.js';
+import { $, root, S, D, setSession } from './state.js';
 import { api } from './api.js';
 import { toast } from './ui/toasts.js';
 import { applyTheme, PAL } from './ui/theme.js';
@@ -68,6 +68,7 @@ export function enterApp(me) {
   applyTheme(me.prefs.theme || 'workbench');
   $('nq-li-role').value = me.user.role; syncRoleDesc('nq-li-role');
   liRoleDirty = false;
+  if (D.hooks.onEnter) D.hooks.onEnter(me);
 }
 
 async function loginAs(name, pw) {
@@ -125,7 +126,9 @@ async function doRegister(name, email, pw, pw2) {
 
 export async function logout() {
   try { await api('/auth/logout', { method: 'POST' }); } catch (e) { /* phiên đã hết hạn */ }
+  S.playing = false; D.resume = null;
   setSession(null);
+  if (D.hooks.onLeave) D.hooks.onLeave();
   $('nq-li-u').value = ''; $('nq-li-p').value = '';
   showAuth(); setTab('login');
 }
