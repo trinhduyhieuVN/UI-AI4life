@@ -34,6 +34,9 @@ def verify_password(pw: str, stored: str) -> bool:
     return False
 
 
+LEGACY_KDFS = ("pbkdf2-sha256-150k", "sha256-iter-fallback")
+
+
 def verify_legacy(pw: str, salt_hex: str, hash_hex: str, kdf: str) -> bool:
     if kdf == "pbkdf2-sha256-150k":
         calc = hashlib.pbkdf2_hmac(

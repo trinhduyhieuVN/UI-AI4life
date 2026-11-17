@@ -91,6 +91,28 @@ def test_import_malformed(client, db):
     assert len(me["views"]) == 3
 
 
+def test_import_malformed_credentials(client, db):
+    _login(client, "imp_i")
+    pack = _pack({
+        "bad_kdf_int": _acc("bad_kdf_int", VEC[0], kdf=123),
+        "bad_kdf_dollar": _acc("bad_kdf_dollar", VEC[0], kdf="pbkdf2-sha256-150k$evil"),
+        "bad_kdf_unknown": _acc("bad_kdf_unknown", VEC[0], kdf="pbkdf2-sha1-999"),
+        "bad_salt_hex": _acc("bad_salt_hex", VEC[0], salt="zzzz"),
+        "bad_salt_odd": _acc("bad_salt_odd", VEC[0], salt="abc"),
+        "bad_hash_hex": _acc("bad_hash_hex", VEC[0], hash="nothex!"),
+        "empty_salt": _acc("empty_salt", VEC[0], salt=""),
+        "good_g": _acc("good_g", VEC[0]),
+    })
+    r = client.post("/api/v1/data/import-backup", json=pack)
+    assert r.status_code == 200
+    assert r.json()["imported"] == 1
+    assert r.json()["skipped"] == 7
+    for name in ("bad_kdf_int", "bad_kdf_dollar", "bad_kdf_unknown", "bad_salt_hex", "bad_salt_odd", "bad_hash_hex", "empty_salt"):
+        assert db.scalar(select(User).where(User.username == name)) is None, name
+    auth._rate.clear()
+    assert client.post("/api/v1/auth/login", json={"username": "bad_salt_hex", "password": "x"}).status_code == 401
+
+
 def test_backup_data_only(client):
     _login(client, "imp_d", "compliance")
     r = client.get("/api/v1/data/backup")
@@ -207,6 +229,28 @@ def test_restore_gates_and_malformed(client):
     me = client.get("/api/v1/auth/me").json()
     assert me["user"]["role"] == "retail"
     assert me["watch"] == []
+
+
+def test_restore_dedupes_watchlist_and_views(client):
+    _login(client, "res_f", "retail")
+    pack = _v2([{
+        "username": "res_f",
+        "prefs": {},
+        "watchlist": ["AAPL", "AAPL", "NVDA", "AAPL"],
+        "views": [
+            {"name": "Trùng", "syms": ["AAPL"]},
+            {"name": "Trùng", "syms": ["NVDA"]},
+            {"name": "Khác", "syms": []},
+        ],
+        "reviews": {},
+    }])
+    r = client.post("/api/v1/data/restore", json=pack)
+    assert r.status_code == 200
+    assert r.json()["watchlist"] == 2
+    assert r.json()["views"] == 2
+    me = client.get("/api/v1/auth/me").json()
+    assert me["watch"] == ["AAPL", "NVDA"]
+    assert [v["name"] for v in me["views"]] == ["Trùng", "Khác"]
 
 
 def test_me_caps_audit_flag(client):

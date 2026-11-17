@@ -35,20 +35,20 @@ def _clean_chart(raw: dict, caps: RoleCaps) -> dict:
         "tf": tf if tf in caps.tfs else caps.tfs[0],
         "spd": max(0, min(int(_num(raw.get("spd"), 1)), caps.maxSpd)),
         "overlays": {
-            "ma1": int(_num(ov.get("ma1"), 9)),
-            "ma2": int(_num(ov.get("ma2"), 21)),
+            "ma1": max(2, min(200, int(_num(ov.get("ma1"), 9)))),
+            "ma2": max(2, min(200, int(_num(ov.get("ma2"), 21)))),
             "vwap": bool(ov.get("vwap", True)),
             "grid": bool(ov.get("grid", True)),
             "cross": bool(ov.get("cross", True)),
         },
         "sliders": {
-            "rate": _num(sl.get("rate"), 2),
-            "density": _num(sl.get("density"), 70),
-            "zoom": _num(sl.get("zoom"), 90),
-            "vol": _num(sl.get("vol"), 26),
+            "rate": max(0.2, min(12, _num(sl.get("rate"), 2))),
+            "density": max(20, min(100, _num(sl.get("density"), 70))),
+            "zoom": max(14, min(390, _num(sl.get("zoom"), 90))),
+            "vol": max(0, min(46, _num(sl.get("vol"), 26))),
         },
         "theme": raw.get("theme") if isinstance(raw.get("theme"), str) else "workbench",
-        "glow": int(_num(raw.get("glow"), 30)),
+        "glow": max(0, min(100, int(_num(raw.get("glow"), 30)))),
         "sound": bool(raw.get("sound", True)),
     }
 

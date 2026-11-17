@@ -90,6 +90,38 @@ def test_chart_clamp(client):
     assert chart["spd"] == 3
 
 
+def test_chart_numeric_clamp(client):
+    _auth(client, "clampnum", "quant")
+    r = client.put("/api/v1/prefs", json={"chart": {
+        "overlays": {"ma1": -5, "ma2": 0},
+        "sliders": {"rate": 99, "density": 5, "zoom": 100000, "vol": -3},
+        "glow": 250,
+    }})
+    assert r.status_code == 200
+    chart = client.get("/api/v1/prefs").json()["chart"]
+    assert chart["overlays"]["ma1"] == 2
+    assert chart["overlays"]["ma2"] == 2
+    assert chart["sliders"]["rate"] == 12
+    assert chart["sliders"]["density"] == 20
+    assert chart["sliders"]["zoom"] == 390
+    assert chart["sliders"]["vol"] == 0
+    assert chart["glow"] == 100
+    r = client.put("/api/v1/prefs", json={"chart": {
+        "overlays": {"ma1": 1000, "ma2": 9999},
+        "sliders": {"rate": -4, "density": 500, "zoom": 0, "vol": 999},
+        "glow": -10,
+    }})
+    assert r.status_code == 200
+    chart = client.get("/api/v1/prefs").json()["chart"]
+    assert chart["overlays"]["ma1"] == 200
+    assert chart["overlays"]["ma2"] == 200
+    assert chart["sliders"]["rate"] == 0.2
+    assert chart["sliders"]["density"] == 100
+    assert chart["sliders"]["zoom"] == 14
+    assert chart["sliders"]["vol"] == 46
+    assert chart["glow"] == 0
+
+
 def test_role_change_audit(client, db):
     _auth(client, "audu", "retail")
     assert client.put("/api/v1/prefs", json={"role": "quant"}).status_code == 200

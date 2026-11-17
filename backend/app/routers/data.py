@@ -26,6 +26,10 @@ def _require_data_manager(u: User) -> None:
         raise HTTPException(403, {"detail": "Vai trò hiện tại không quản lý dữ liệu", "cap": "dataManager"})
 
 
+def _hex_ok(s: str) -> bool:
+    return bool(s) and len(s) % 2 == 0 and all(c in "0123456789abcdefABCDEF" for c in s)
+
+
 def _chart_from_flat(prefs: dict, current: dict) -> dict:
     raw = dict(current)
     for k in ("type", "tf", "spd", "glow", "sound"):
@@ -127,13 +131,20 @@ async def restore(request: Request, u: User = Depends(auth.current_user), db: Or
     for w in db.scalars(select(WatchlistItem).where(WatchlistItem.user_id == u.id)):
         db.delete(w)
     db.flush()
-    syms = [s for s in (entry.get("watchlist") or []) if isinstance(s, str) and db.get(SymbolRow, s) is not None]
+    syms = list(dict.fromkeys(
+        s for s in (entry.get("watchlist") or []) if isinstance(s, str) and db.get(SymbolRow, s) is not None
+    ))
     for i, sym in enumerate(syms):
         db.add(WatchlistItem(user_id=u.id, symbol=sym, position=i))
     for v in db.scalars(select(ViewRow).where(ViewRow.user_id == u.id)):
         db.delete(v)
     db.flush()
-    views = [v for v in (entry.get("views") or []) if isinstance(v, dict) and isinstance(v.get("name"), str)]
+    views = []
+    seen_names = set()
+    for v in (entry.get("views") or []):
+        if isinstance(v, dict) and isinstance(v.get("name"), str) and v["name"] not in seen_names:
+            seen_names.add(v["name"])
+            views.append(v)
     for v in views:
         db.add(ViewRow(user_id=u.id, name=v["name"], config_json=json.dumps(v, ensure_ascii=False)))
     for r in db.scalars(select(Review).where(Review.user_id == u.id)):
@@ -181,6 +192,9 @@ async def import_backup(request: Request, u: User = Depends(auth.current_user), 
             skipped += 1
             continue
         kdf = acc.get("kdf") or "pbkdf2-sha256-150k"
+        if not isinstance(kdf, str) or kdf not in auth.LEGACY_KDFS or not _hex_ok(acc["salt"]) or not _hex_ok(acc["hash"]):
+            skipped += 1
+            continue
         legacy = "pbkdf2$" + kdf + "$" + acc["salt"] + "$" + acc["hash"]
         prefs = acc.get("prefs") if isinstance(acc.get("prefs"), dict) else {}
         role = prefs.get("role") if prefs.get("role") in ROLE_IDS else "retail"
