@@ -276,6 +276,15 @@ async function boot() {
   wire();
   wireChart();
   applyTheme('workbench');
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('nq-install').hidden = false; });
+  window.addEventListener('appinstalled', () => { installEvt = null; $('nq-install').hidden = true; });
+  $('nq-install').addEventListener('click', () => {
+    if (!installEvt) return;
+    installEvt.prompt();
+    installEvt.userChoice.finally(() => { installEvt = null; $('nq-install').hidden = true; });
+  });
   try {
     const me = await api('/auth/me');
     enterApp(me);

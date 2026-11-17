@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nasdaq Replay — XNAS.ITCH Historical</title>
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/192.png">
+<link rel="apple-touch-icon" href="/icons/192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#20282D">
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -94,6 +97,8 @@
       <div class="nq-spacer"></div>
       <div class="nq-src" title="Chưa nối Databento — đang dùng dữ liệu mẫu có hạt giống, tất định"><i></i>DỮ LIỆU MẪU</div>
       <span class="nq-rolechip" id="nq-rolechip">NĐT cá nhân</span>
+      <button class="nq-btn ico" id="nq-install" hidden aria-label="Cài ứng dụng" title="Cài Nasdaq Replay lên thiết bị">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg></button>
       <button class="nq-btn ico" id="nq-sound" aria-pressed="true" aria-label="Tắt âm thanh" title="Âm thanh: bật">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
       <button class="nq-user" id="nq-user" aria-haspopup="menu"><span class="nq-av" id="nq-av">D</span><b id="nq-uname">demo</b>
