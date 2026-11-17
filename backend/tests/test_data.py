@@ -140,3 +140,77 @@ def test_data_gate_observer(client):
     r = client.post("/api/v1/data/import-backup", json=_pack({}))
     assert r.status_code == 403
     assert r.json()["detail"]["cap"] == "dataManager"
+
+def _v2(users):
+    return {"app": "nasdaq-replay", "version": 2, "exportedAt": "2026-11-17T00:00:00+00:00", "users": users}
+
+
+def test_restore_overwrites_current_user(client):
+    _login(client, "res_a", "compliance")
+    client.put("/api/v1/prefs", json={"chart": {"tf": "15m", "type": "baseline", "sliders": {"zoom": 40}}})
+    client.post("/api/v1/watchlist", json={"symbol": "NVDA"})
+    pack = client.get("/api/v1/data/backup").json()
+    entry = next(u for u in pack["users"] if u["username"] == "res_a")
+    for s in client.get("/api/v1/auth/me").json()["watch"]:
+        assert client.delete("/api/v1/watchlist/" + s).status_code == 200
+    for v in client.get("/api/v1/views").json()["views"]:
+        assert client.delete("/api/v1/views/" + str(v["id"])).status_code == 200
+    client.put("/api/v1/prefs", json={"chart": {}})
+    wiped = client.get("/api/v1/auth/me").json()
+    assert wiped["watch"] == [] and wiped["views"] == []
+    entry["prefs"]["future"] = False
+    r = client.post("/api/v1/data/restore", json=pack)
+    assert r.status_code == 200
+    after = client.get("/api/v1/auth/me").json()
+    assert after["watch"] == entry["watchlist"]
+    assert len(after["views"]) == len(entry["views"])
+    assert after["prefs"]["future"] is True
+    assert after["prefs"]["tf"] == "15m"
+    assert after["prefs"]["sliders"]["zoom"] == 40
+
+
+def test_restore_reviews_and_role_change(client, db):
+    _login(client, "res_b", "compliance")
+    db.add(TradingSession(date="2026-11-03", label="2026-11-03"))
+    db.flush()
+    db.add(SignalEvent(
+        id="AAPL|2026-11-03|R1", symbol="AAPL", session_date="2026-11-03",
+        type="point", start_idx=10, end_idx=10, score=1.0, threshold=1.0,
+        alert=0, label="ordinary", outbox="pending", quality="OK",
+        model="m", model_version="v",
+    ))
+    db.commit()
+    client.post("/api/v1/reviews", json={"event_id": "AAPL|2026-11-03|R1", "label": "noteworthy"})
+    pack = client.get("/api/v1/data/backup").json()
+    entry = next(u for u in pack["users"] if u["username"] == "res_b")
+    assert entry["reviews"]["AAPL|2026-11-03|R1"]["label"] == "noteworthy"
+    client.post("/api/v1/reviews", json={"event_id": "AAPL|2026-11-03|R1", "label": "ordinary"})
+    entry["prefs"]["role"] = "regulator"
+    assert client.post("/api/v1/data/restore", json=pack).status_code == 200
+    me = client.get("/api/v1/auth/me").json()
+    assert me["user"]["role"] == "regulator"
+    assert me["reviews"]["AAPL|2026-11-03|R1"]["label"] == "noteworthy"
+    actions = [a["action"] for a in client.get("/api/v1/audit").json()["audit"]]
+    assert "role_change" in actions and "restore_backup" in actions
+
+
+def test_restore_gates_and_malformed(client):
+    _login(client, "res_c", "observer")
+    assert client.post("/api/v1/data/restore", json=_v2([])).status_code == 403
+    _login(client, "res_d", "retail")
+    assert client.post("/api/v1/data/restore", json={"app": "x", "version": 2, "users": []}).status_code == 422
+    assert client.post("/api/v1/data/restore", json=_v2([{"username": "someone_else"}])).status_code == 422
+    r = client.post("/api/v1/data/restore", json=_v2([
+        {"username": "res_d", "prefs": {"role": "admin"}, "watchlist": ["NOPE"], "views": [], "reviews": {}},
+    ]))
+    assert r.status_code == 200
+    me = client.get("/api/v1/auth/me").json()
+    assert me["user"]["role"] == "retail"
+    assert me["watch"] == []
+
+
+def test_me_caps_audit_flag(client):
+    _login(client, "res_e", "compliance")
+    assert client.get("/api/v1/auth/me").json()["caps"]["audit"] is True
+    client.put("/api/v1/prefs", json={"role": "retail"})
+    assert client.get("/api/v1/auth/me").json()["caps"]["audit"] is False

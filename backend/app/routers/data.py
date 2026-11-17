@@ -81,6 +81,82 @@ def backup(u: User = Depends(auth.current_user), db: OrmSession = Depends(get_db
     return {"app": "nasdaq-replay", "version": 2, "exportedAt": now(), "users": out}
 
 
+@router.post("/restore")
+async def restore(request: Request, u: User = Depends(auth.current_user), db: OrmSession = Depends(get_db)):
+    _require_data_manager(u)
+    raw = await request.body()
+    try:
+        pack = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise HTTPException(422, "File không phải JSON hợp lệ")
+    if not isinstance(pack, dict) or pack.get("app") != "nasdaq-replay" or pack.get("version") != 2:
+        raise HTTPException(422, "Không phải backup v2 của ứng dụng này")
+    users = pack.get("users")
+    if not isinstance(users, list):
+        raise HTTPException(422, "Backup thiếu mục users")
+    entry = next(
+        (x for x in users if isinstance(x, dict) and isinstance(x.get("username"), str) and x["username"].lower() == u.username),
+        None,
+    )
+    if entry is None:
+        raise HTTPException(422, "Backup không chứa tài khoản hiện tại")
+    prefs = entry.get("prefs") if isinstance(entry.get("prefs"), dict) else {}
+    role = prefs.get("role") if prefs.get("role") in ROLE_IDS else "retail"
+    caps = ROLES[role]
+    p = db.get(Prefs, u.id)
+    if p is None:
+        p = Prefs(user_id=u.id)
+        db.add(p)
+        db.flush()
+    old_role = p.role
+    p.role = role
+    if isinstance(prefs.get("theme"), str):
+        p.theme = prefs["theme"]
+    p.future = 1 if caps.forceFuture else int(bool(prefs.get("future", True)))
+    ov = prefs.get("overlays") if isinstance(prefs.get("overlays"), dict) else {}
+    sl = prefs.get("sliders") if isinstance(prefs.get("sliders"), dict) else {}
+    chart = {
+        "type": prefs.get("type"), "tf": prefs.get("tf"), "spd": prefs.get("spd"),
+        "glow": prefs.get("glow"), "sound": prefs.get("sound"),
+        "overlays": {k: ov[k] for k in ("ma1", "ma2", "vwap", "grid", "cross") if k in ov},
+        "sliders": {k: sl[k] for k in ("rate", "density", "zoom", "vol") if k in sl},
+    }
+    p.chart_json = json.dumps(_clean_chart(chart, caps), ensure_ascii=False)
+    p.updated_at = now()
+    # SQLAlchemy xếp INSERT trước DELETE cùng bảng — flush deletes trước khi thêm hàng thay thế.
+    for w in db.scalars(select(WatchlistItem).where(WatchlistItem.user_id == u.id)):
+        db.delete(w)
+    db.flush()
+    syms = [s for s in (entry.get("watchlist") or []) if isinstance(s, str) and db.get(SymbolRow, s) is not None]
+    for i, sym in enumerate(syms):
+        db.add(WatchlistItem(user_id=u.id, symbol=sym, position=i))
+    for v in db.scalars(select(ViewRow).where(ViewRow.user_id == u.id)):
+        db.delete(v)
+    db.flush()
+    views = [v for v in (entry.get("views") or []) if isinstance(v, dict) and isinstance(v.get("name"), str)]
+    for v in views:
+        db.add(ViewRow(user_id=u.id, name=v["name"], config_json=json.dumps(v, ensure_ascii=False)))
+    for r in db.scalars(select(Review).where(Review.user_id == u.id)):
+        db.delete(r)
+    db.flush()
+    reviews = entry.get("reviews") if isinstance(entry.get("reviews"), dict) else {}
+    nrev = 0
+    for eid, rv in reviews.items():
+        if not isinstance(rv, dict) or rv.get("label") not in LABELS:
+            continue
+        db.add(Review(
+            user_id=u.id, event_id=eid, label=rv["label"],
+            reviewer_name=rv.get("reviewer") if isinstance(rv.get("reviewer"), str) else u.username,
+            at=rv.get("at") if isinstance(rv.get("at"), str) else now(),
+        ))
+        nrev += 1
+    if old_role != role:
+        log_audit(db, u.id, "role_change", {"from": old_role, "to": role, "via": "restore"})
+    log_audit(db, u.id, "restore_backup", {"watchlist": len(syms), "views": len(views), "reviews": nrev})
+    db.commit()
+    return {"restored": True, "watchlist": len(syms), "views": len(views), "reviews": nrev}
+
+
 @router.post("/import-backup")
 async def import_backup(request: Request, u: User = Depends(auth.current_user), db: OrmSession = Depends(get_db)):
     _require_data_manager(u)

@@ -2,6 +2,7 @@ import { $, root, curRole } from '../state.js';
 import { logout, setTab } from '../auth.js';
 import { rolePop } from '../roles.js';
 import { dataPop } from './migrate.js';
+import { openAudit } from './audit.js';
 
 export function popAt(el, cx, cy) {
   root.appendChild(el);
@@ -27,6 +28,7 @@ export function userMenu() {
   const r = curRole();
   const m = document.createElement('div'); m.className = 'nq-menu';
   let h = '<button data-a="role">Đổi vai trò · ' + r.label + '</button><button data-a="new">Tài khoản khác</button>';
+  if (r.audit) h += '<button data-a="audit">Nhật ký kiểm toán</button>';
   if (r.dataManager) h += '<button data-a="data">Quản lý dữ liệu</button>';
   h += '<hr><button data-a="out" class="dgr">Đăng xuất</button>';
   m.innerHTML = h;
@@ -39,6 +41,7 @@ export function userMenu() {
     if (a.dataset.a === 'out') logout();
     if (a.dataset.a === 'new') logout().then(() => setTab('register'));
     if (a.dataset.a === 'role') rolePop();
+    if (a.dataset.a === 'audit') openAudit();
     if (a.dataset.a === 'data') dataPop();
   });
 }

@@ -148,4 +148,6 @@ def me(u: User = Depends(auth.current_user), db: OrmSession = Depends(get_db)):
     }
     prefs = {"role": p.role, "theme": p.theme, "future": bool(p.future)}
     prefs.update(json.loads(p.chart_json or "{}"))
-    return {"user": _user_payload(u, p), "prefs": prefs, "caps": asdict(caps_for(u)), "watch": watch, "views": views, "reviews": reviews}
+    caps = asdict(caps_for(u))
+    caps["audit"] = auth.CAP_CHECKS["audit"](caps_for(u))
+    return {"user": _user_payload(u, p), "prefs": prefs, "caps": caps, "watch": watch, "views": views, "reviews": reviews}

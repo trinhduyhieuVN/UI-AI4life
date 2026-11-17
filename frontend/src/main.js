@@ -18,6 +18,7 @@ import { typeMenu } from './chart/types.js';
 import { renderSignals, saveReview, exportSignalsCSV } from './signals.js';
 import { cv, geo, mouse, ptr, wrap, renderChart, exportPNG, exportCSV } from './chart/renderer.js';
 import { userMenu, closePops } from './ui/menus.js';
+import { dataAuthPop } from './ui/migrate.js';
 import { closeDrawer, drawDrawerSpark, getDrawerSym } from './ui/drawer.js';
 
 /* ---------- activity ping: phát hiện 401 giữa phiên phát ---------- */
@@ -137,6 +138,7 @@ function wireChart() {
 /* ---------- wiring ---------- */
 function wire() {
   $('nq-typebtn').addEventListener('click', typeMenu);
+  $('nq-data-auth').addEventListener('click', dataAuthPop);
 
   /* top */
   $('nq-session').addEventListener('change', function () {

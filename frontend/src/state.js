@@ -38,7 +38,7 @@ const FALLBACK_CAPS = {
   types: ['line', 'area', 'candles'], tfs: ['5m'], maxSpd: 3,
   ctl: { speed: true }, acts: {},
   signals: 'headlines', sigScope: 'symbol', review: false, blind: false, sigCSV: false,
-  forceFuture: true, dataManager: false, drawerEdit: false, png: false, csv: false,
+  forceFuture: true, dataManager: false, drawerEdit: false, png: false, csv: false, audit: false,
 };
 
 export function curRole() { return capsCache || FALLBACK_CAPS; }
