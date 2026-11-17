@@ -14,9 +14,9 @@ class Settings:
     cookie_name: str = "nq_session"
     session_days: int = 30
     login_rate: int = 5
-    https: bool = False
-    certfile: Path | None = None
-    keyfile: Path | None = None
+    https: bool = os.environ.get("NQ_HTTPS", "") == "1"
+    certfile: Path = Path(os.environ.get("NQ_CERTFILE", str(ROOT / "certs" / "cert.pem")))
+    keyfile: Path = Path(os.environ.get("NQ_KEYFILE", str(ROOT / "certs" / "key.pem")))
 
 
 SETTINGS = Settings()

@@ -52,3 +52,16 @@ def create_app(seed_data: bool = True) -> FastAPI:
 
 
 app = create_app()
+
+
+def run() -> None:
+    import uvicorn
+
+    ssl_kwargs = {}
+    if SETTINGS.https:
+        ssl_kwargs = {"ssl_certfile": str(SETTINGS.certfile), "ssl_keyfile": str(SETTINGS.keyfile)}
+    uvicorn.run(app, host=SETTINGS.host, port=SETTINGS.port, **ssl_kwargs)
+
+
+if __name__ == "__main__":
+    run()
