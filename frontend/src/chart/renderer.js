@@ -295,10 +295,9 @@ export function renderChart() {
       ctx.strokeStyle = rgba(PAL.mg, 0.85); ctx.lineWidth = 1.4;
       if (S.glow > 0.1) { ctx.shadowColor = rgba(PAL.mg, 0.9); ctx.shadowBlur = S.glow * 14; }
       ctx.beginPath(); ctx.moveTo(cx, pTop); ctx.lineTo(cx, vBot); ctx.stroke();
-      const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 380);
       const cy2 = Y(lb.c);
-      ctx.fillStyle = rgba(PAL.mg, 0.20 + 0.22 * pulse);
-      ctx.beginPath(); ctx.arc(cx, cy2, 5 + 4.5 * pulse, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = rgba(PAL.mg, 0.31);
+      ctx.beginPath(); ctx.arc(cx, cy2, 7, 0, 6.2832); ctx.fill();
       ctx.fillStyle = PAL.mg; ctx.beginPath(); ctx.arc(cx, cy2, 2.7, 0, 6.2832); ctx.fill();
       ctx.restore();
     }
@@ -349,6 +348,12 @@ export function exportPNG() {
   toast('Đã xuất ảnh biểu đồ ' + S.sym + ' · ' + S.tf, { kind: 'ok' });
 }
 export function exportCSV() {
+  if (D.historical) {
+    if (!curRole().csv) return;
+    const rows = D.bars.slice(0, S.cursor + 1).map(b => [new Date(b.t).toISOString(), b.v ? b.o : '', b.v ? b.h : '', b.v ? b.l : '', b.v ? b.c : '', b.v].join(','));
+    download(S.sym + '_' + D.SESSIONS[S.si] + '_' + S.tf + '_MBO.csv', new Blob([['end_utc,open,high,low,close,volume', ...rows].join('\n')], { type: 'text/csv' }));
+    return;
+  }
   const p = new URLSearchParams({ symbol: S.sym, date: D.SESSIONS[S.si], tf: S.tf });
   apiBlob('/export/bars.csv?' + p.toString()).then(blob => {
     download('nasdaq-replay_' + S.sym + '_' + D.SESSIONS[S.si] + '_' + S.tf + '.csv', blob);

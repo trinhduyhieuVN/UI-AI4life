@@ -4,10 +4,10 @@
 
 ## 1. Yêu cầu & cài đặt
 
-- Python ≥ 3.11 (đã kiểm chứng 3.11.9). Dependencies: `fastapi`, `uvicorn`, `sqlalchemy`, `argon2-cffi`:
+- Python ≥ 3.11 (đã kiểm chứng 3.11.9). Dependencies: `fastapi`, `uvicorn`, `websockets>=14`, `sqlalchemy`, `argon2-cffi`:
 
 ```bash
-python -m pip install --user fastapi uvicorn sqlalchemy argon2-cffi
+python -m pip install --user fastapi uvicorn "websockets>=14" sqlalchemy argon2-cffi
 ```
 
 - Node ≥ 22 chỉ cần khi **sinh lại seed** (mục 4); chạy server không cần Node.
@@ -173,3 +173,15 @@ PYTHONIOENCODING=utf-8 python -m pytest backend/tests --basetemp=.pytest-tmp -q
 
 - `test_https` tự skip khi thiếu cert hoặc cổng 8000 bận — chạy lại khi rảnh cổng để đủ 51.
 - Gate UI đầy đủ (P1+P2, 136 checks: vai trò, tín hiệu, export, offline, PWA, audit/backup/restore, mobile) chạy bằng probe CDP riêng trong `%TEMP%/nq-test/probe9.js` (không nằm trong repo): `node probe9.js` cho HTTP; `NQ_PROBE_HTTPS=1 NQ_PROBE_HOST=localhost node probe9.js` và `NQ_PROBE_HOST=<IP-LAN>` cho HTTPS (Chrome tin cert qua SPKI pin, không đụng trust store hệ thống).
+
+## Phát lại dữ liệu MBO lịch sử
+
+Đăng nhập ở trang chủ Nasdaq Replay. Chọn mã trong watchlist, chọn ngày và nhấn **Phát** hoặc kéo thanh thời gian. Đồng hồ dùng giờ New York. Bảng tín hiệu hiển thị năng lượng DHGNN + EBM tại cuối nến đang phát, ngưỡng cảnh báo và các phút đã vượt ngưỡng của mã đang xem. Dữ liệu mẫu vẫn truy cập được qua `/?mode=sample`.
+
+Để tạo hoặc cập nhật kho lịch sử, chạy từ thư mục gốc dự án bằng Python 3.11+ có NumPy, pandas và bộ đọc Zstandard (Python 3.14 có sẵn; ở bản cũ cài thêm `zstandard`).
+
+```powershell
+python tools/import_historical.py --data "D:/DATA_AI4LIFE" --model-results "../msft_month_baseline/global8"
+```
+
+Trình nhập kiểm tra SHA-256 của MBO, tổng hợp OHLC và khối lượng từ giao dịch trong từng phút, đối chiếu tổng khối lượng với kết quả tiền xử lý và ghép theo thời điểm kết thúc phút. Phút không có giao dịch có khối lượng bằng 0 và giá trống. Năng lượng và ngưỡng được lấy từ kết quả phiên quan sát của checkpoint 8 mã. Tệp SQLite cục bộ `data/historical.db` được thay sau khi kiểm tra thành công toàn bộ lần nhập. Ứng dụng nạp trước nến giá của phiên để hỗ trợ tua. Điểm mô hình được yêu cầu đến mốc đang phát. Khi tua ngược, bảng tín hiệu và dấu trên biểu đồ chỉ hiển thị các phút đã đi qua.

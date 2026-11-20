@@ -33,7 +33,7 @@ export async function openDrawer(sym) {
         stat('Khối lượng phiên', vfmt(st.vol)) + stat('VWAP phiên', nfmt(st.vwap, 2)) +
       '</div>' +
       '<div style="font-size:11.5px;color:var(--dim);line-height:1.65;border-top:1px solid var(--line);padding-top:12px">' +
-        'Số liệu mẫu sinh tất định trên máy chủ từ hạt giống <span class="nq-mono" style="color:var(--dim)">' + sym + '|' + D.SESSIONS[S.si] + '</span>, không phải dữ liệu sàn thật. Khi nối Databento, khối này đọc từ <span class="nq-mono" style="color:var(--dim)">ohlcv-1m / ohlcv-1d</span> của XNAS.ITCH.</div>' +
+        (D.historical ? 'Giao dịch MBO · Databento XNAS.ITCH. Phút không có giao dịch giữ giá gần nhất trên biểu đồ và có khối lượng bằng 0.' : 'Số liệu mẫu sinh tất định trên máy chủ từ hạt giống ' + sym + '|' + D.SESSIONS[S.si]) + '</div>' +
     '</div>' +
     '<div class="nq-dr-f">' +
       '<button class="nq-btn pri" id="nq-dr-open">Mở biểu đồ</button>' +

@@ -2,6 +2,10 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
+<script>
+  const entry = new URLSearchParams(location.search);
+  if (entry.get('view') !== 'terminal' && entry.get('mode') !== 'sample') location.replace('/orbit/');
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nasdaq Replay — XNAS.ITCH Historical</title>
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/192.png">
@@ -90,6 +94,7 @@
       <button class="nq-btn ico sm nq-railtoggle" id="nq-railtoggle" aria-label="Mở danh sách mã">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
       <h1 class="nq-page-t">Phát lại phiên Nasdaq</h1>
+      <a class="nq-btn" href="/orbit/">NevAI</a>
       <div class="nq-live"><i></i><span>Lịch sử</span></div>
       <div class="nq-clock mono" id="nq-clock">09:30:00<small>ET</small></div>
       <div class="nq-sep"></div>

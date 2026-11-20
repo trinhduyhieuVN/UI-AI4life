@@ -4,6 +4,7 @@ import { isOffline, loadOffline, saveSession } from './offline.js';
 import { nfmt, hhmm, fmtDateShort, escapeHtml } from './util.js';
 import { toast, toastApiError } from './ui/toasts.js';
 import { download } from './chart/renderer.js';
+import { renderHistorySignals, visibleHistoryScores, historyMarkers } from './history-signals.js';
 
 export const RLABEL = { noteworthy: 'Đáng chú ý', ordinary: 'Thông thường', uncertain: 'Không chắc chắn', data_error: 'Lỗi dữ liệu' };
 export const SIGMODE_TXT = {
@@ -59,6 +60,7 @@ export function revealedEvents() {
 }
 
 export function currentSymbolEvents() {
+  if (D.historical) return historyMarkers();
   const evs = D.sigCache.get(sigKey()) || [];
   if (curRole().sigScope === 'symbol') return evs;
   return evs.filter(e => e.sym === S.sym && e.si === S.si);
@@ -108,6 +110,7 @@ function sigRowHTML(e, r) {
 }
 
 export function renderSignals() {
+  if (D.historical) return renderHistorySignals();
   const r = curRole(), b = $('nq-sig-b');
   if (!D.sigCache.has(sigKey())) {
     ensureSignals().catch(e => { if (e.status !== 401) toast(e.message); });
@@ -156,6 +159,15 @@ export function saveReview(id, label) {
 
 export function exportSignalsCSV() {
   const r = curRole();
+  if (D.historical) {
+    if (!r.sigCSV || S.blind) return;
+    const bar = D.bars[S.cursor], pts = visibleHistoryScores();
+    if (!bar || pts.length !== bar.minute) { toast('Đang tải điểm tại mốc phát.'); return; }
+    const rows = pts.filter(p => S.sigFilter !== 'alert' || p.energy > p.threshold)
+      .map(p => [new Date(p.end_ms).toISOString(), p.energy, p.threshold, Number(p.energy > p.threshold)].join(','));
+    download(S.sym + '_' + bar.day + '_DHGNN_EBM.csv', new Blob([['end_utc,energy,threshold,alert', ...rows].join('\n')], { type: 'text/csv' }));
+    return;
+  }
   const p = new URLSearchParams({ date: D.SESSIONS[S.si], tf: S.tf, cursor: String(S.cursor), scope: r.sigScope, blind: S.blind ? '1' : '0' });
   if (r.sigScope === 'symbol') p.set('symbol', S.sym);
   apiBlob('/export/signals.csv?' + p.toString()).then(blob => {

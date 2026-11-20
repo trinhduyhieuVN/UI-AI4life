@@ -1,4 +1,5 @@
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -9,12 +10,15 @@ from . import seed
 from .config import SETTINGS
 from .db import SessionLocal, init_db
 from .models import SymbolRow
+from .services import report_mail
 from .routers import (
     audit as audit_router,
     auth as auth_router,
     data as data_router,
     export as export_router,
     market as market_router,
+    news as news_router,
+    historical as historical_router,
     prefs as prefs_router,
     reviews as reviews_router,
     signals as signals_router,
@@ -34,12 +38,22 @@ def create_app(seed_data: bool = True) -> FastAPI:
                 if s.scalar(select(func.count(SymbolRow.symbol))) == 0:
                     seed.load_manifest(s, SETTINGS.manifest_path)
                 seed.ensure_demo(s)
-        yield
+        app.state.news = news_router.NewsFeed()
+        mail = asyncio.create_task(report_mail.worker())
+        try:
+            yield
+        finally:
+            mail.cancel()
+            with suppress(asyncio.CancelledError):
+                await mail
+            await app.state.news.stop()
 
     app = FastAPI(title="Nasdaq Replay API", lifespan=lifespan)
     app.include_router(auth_router.router)
     app.include_router(prefs_router.router)
     app.include_router(market_router.router)
+    app.include_router(news_router.router)
+    app.include_router(historical_router.router)
     app.include_router(watch_router.router)
     app.include_router(views_router.router)
     app.include_router(signals_router.router)

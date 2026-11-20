@@ -6,6 +6,7 @@ import { popAt, closePops } from './menus.js';
 import { quote, loadSeries, apiAddSymbol, apiRemoveSymbol, apiOrder, replaceWatch, apiSaveView, apiRenameView, apiDeleteView } from '../data.js';
 import { persist } from '../prefs.js';
 import { openDrawer } from './drawer.js';
+import { sessionFor } from '../history.js';
 
 const DEFAULT_WATCH = ['AAPL', 'NVDA', 'MSFT', 'TSLA', 'AMZN', 'META', 'AVGO', 'AMD'];
 
@@ -19,14 +20,37 @@ export function visibleSymbols() {
   if (q) list = list.filter(s => s.toLowerCase().indexOf(q) >= 0 || (D.SYM[s] && (D.SYM[s].n.toLowerCase().indexOf(q) >= 0 || D.SYM[s].sec.toLowerCase().indexOf(q) >= 0)));
   return list;
 }
-export function sparkSVG(vals, up, w, h) {
+function sparkPoints(vals, w, h) {
   if (!vals || vals.length < 2) return '';
   let lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
   if (hi - lo < 1e-9) hi = lo + 1;
-  const pts = vals.map((v, i) => (i / (vals.length - 1) * w).toFixed(1) + ',' + (h - 2 - (v - lo) / (hi - lo) * (h - 4)).toFixed(1)).join(' ');
-  const col = up ? PAL.up : PAL.dn;
-  return '<svg class="nq-spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="width:100%;height:' + h + 'px">' +
-    '<polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  return vals.map((v, i) => (i / (vals.length - 1) * w).toFixed(1) + ',' + (h - 2 - (v - lo) / (hi - lo) * (h - 4)).toFixed(1)).join(' ');
+}
+
+const rowQuotes = new WeakMap();
+function updateQuote(row) {
+  const q = quote(row.dataset.sym);
+  if (rowQuotes.has(row) && rowQuotes.get(row) === (q.ready ? q : null)) return;
+  rowQuotes.set(row, q.ready ? q : null);
+  const price = row.querySelector('.nq-sym-q b'), change = price.nextElementSibling;
+  price.textContent = nfmt(q.px, 2);
+  change.textContent = q.ready ? (q.p >= 0 ? '+' : '') + nfmt(q.p, 2) + '%' : '—';
+  change.className = q.up ? 'nq-up' : 'nq-dn';
+  const line = row.querySelector('.nq-spark polyline');
+  line.setAttribute('points', sparkPoints(q.spark, 120, 20));
+  line.setAttribute('stroke', q.up ? PAL.up : PAL.dn);
+}
+
+export function refreshQuotes() {
+  const host = $('nq-list');
+  for (const row of host.querySelectorAll('.nq-sym')) updateQuote(row);
+  if (['chg', 'vol', 'px'].includes(S.sort)) {
+    const rows = new Map([...host.querySelectorAll('.nq-sym')].map(row => [row.dataset.sym, row]));
+    visibleSymbols().forEach((sym, i) => {
+      const row = rows.get(sym);
+      if (row && row !== host.children[i]) host.insertBefore(row, host.children[i] || null);
+    });
+  }
 }
 export function renderList() {
   const host = $('nq-list'), list = visibleSymbols();
@@ -37,7 +61,6 @@ export function renderList() {
     host.appendChild(e); return;
   }
   list.forEach(sym => {
-    const q = quote(sym);
     const row = document.createElement('div');
     row.className = 'nq-sym'; row.setAttribute('role', 'listitem');
     row.setAttribute('aria-current', sym === S.sym ? 'true' : 'false');
@@ -46,12 +69,16 @@ export function renderList() {
     const meta = D.SYM[sym] || { n: '' };
     row.innerHTML = chk +
       '<div class="nq-sym-id"><b>' + sym + '</b><span>' + escapeHtml(meta.n) + '</span></div>' +
-      '<div class="nq-sym-q"><b>' + nfmt(q.px, 2) + '</b><span class="' + (q.up ? 'nq-up' : 'nq-dn') + '">' + (q.p >= 0 ? '+' : '') + nfmt(q.p, 2) + '%</span></div>' +
+      '<div class="nq-sym-q"><b></b><span></span></div>' +
       '<button class="nq-sym-info" data-info="' + sym + '" aria-label="Chi tiết ' + sym + '"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.6"/></svg></button>' +
-      sparkSVG(q.spark, q.up, 120, 20);
+      '<svg class="nq-spark" viewBox="0 0 120 20" preserveAspectRatio="none" style="width:100%;height:20px"><polyline fill="none" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+    updateQuote(row);
     row.addEventListener('click', ev => {
       if (ev.target.closest('[data-chk]')) { toggleSelect(sym); return; }
-      if (ev.target.closest('[data-info]')) { openDrawer(sym); return; }
+      if (ev.target.closest('[data-info]')) {
+        if (D.historical && !sessionFor(sym, D.SESSIONS[S.si])) { toast('Chọn mã để xem phiên có dữ liệu.'); return; }
+        openDrawer(sym).catch(e => toast(e.message)); return;
+      }
       selectSymbol(sym);
     });
     if (S.sort === 'manual' && curRole().rail === 'rw') {
@@ -119,7 +146,7 @@ export function removeSymbols(syms) {
 export function resetList() {
   if (curRole().rail !== 'rw') { toast('Vai trò ' + curRole().label + ' chỉ xem danh sách.', { kind: 'warn', ms: 2400 }); return; }
   const before = D.watch.slice();
-  replaceWatch(DEFAULT_WATCH.slice()).then(() => {
+  replaceWatch(D.historical ? D.SYMBOLS.map(x => x.s) : DEFAULT_WATCH.slice()).then(() => {
     S.selected = {}; S.activeView = null; S.query = ''; $('nq-q').value = '';
     if (D.watch.indexOf(S.sym) < 0) { S.sym = D.watch[0]; loadSeries(true); }
     renderList(); renderViews();
@@ -154,7 +181,7 @@ export function renderViews() {
 }
 export function applyView(v) {
   const filtered = v.symbols.filter(s => !!D.SYM[s]);
-  const final = filtered.length ? filtered : DEFAULT_WATCH.slice();
+  const final = filtered.length ? filtered : (D.historical ? D.SYMBOLS.map(x => x.s) : DEFAULT_WATCH.slice());
   replaceWatch(final).then(() => {
     S.sort = v.sort || 'manual'; $('nq-sort').value = S.sort;
     if (v.tf && TFS[v.tf] != null && curRole().tfs.indexOf(v.tf) >= 0) { S.tf = v.tf; $('nq-c-tf').value = v.tf; }

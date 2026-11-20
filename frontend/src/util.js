@@ -1,9 +1,9 @@
-import { ET_OFFSET } from './state.js';
+const marketTime = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 export function fmtDate(d) { const p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
 export function fmtDateShort(d) { const p = d.split('-'); return p[2] + '/' + p[1]; }
-export function hhmm(ms) { const d = new Date(ms - ET_OFFSET); return String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0'); }
-export function hhmmss(ms) { return hhmm(ms) + ':' + String(new Date(ms - ET_OFFSET).getUTCSeconds()).padStart(2, '0'); }
+export function hhmm(ms) { return Number.isFinite(ms) ? marketTime.format(ms) : '—'; }
+export function hhmmss(ms) { return hhmm(ms) + ':' + String(new Date(ms).getUTCSeconds()).padStart(2, '0'); }
 export function nfmt(v, dp) { if (v == null || !isFinite(v)) return '—'; return v.toLocaleString('en-US', { minimumFractionDigits: dp == null ? 2 : dp, maximumFractionDigits: dp == null ? 2 : dp }); }
 export function vfmt(v) { if (v == null || !isFinite(v)) return '—'; if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B'; if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M'; if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K'; return String(Math.round(v)); }
 export function rgba(hex, a) {

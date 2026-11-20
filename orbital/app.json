@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "NevAI",
+    "slug": "ai4life-orbit",
+    "version": "1.0.0",
+    "userInterfaceStyle": "dark",
+    "ios": { "bundleIdentifier": "com.ai4life.orbit" },
+    "android": { "package": "com.ai4life.orbit" },
+    "web": { "bundler": "metro", "output": "single" },
+    "experiments": { "baseUrl": "/orbit" }
+  }
+}

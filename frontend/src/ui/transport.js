@@ -32,7 +32,7 @@ export function setCursor(v, silent) {
   followView(); D.dirty = true; D.sigDirty = true; syncTransport(); syncHeader();
 }
 export function setPlaying(p) {
-  if (p && S.cursor >= D.total - 1) { S.cursor = 0; followView(); }
+  if (p && S.cursor >= D.total - 1) setCursor(0, true);
   S.playing = p; D.dirty = true; syncTransport();
   if (p) audio();
 }
@@ -83,6 +83,7 @@ export function buildSessionSelect() {
   sel.value = S.si;
 }
 
+let legendMarkup, playIconState;
 export function syncHeader() {
   const ci = chgInfo();
   const meta = D.SYM[S.sym] || { n: '', sec: '' };
@@ -106,7 +107,7 @@ export function syncHeader() {
       '<span>' + (S.tf === '1D' ? fmtDate(D.SESSIONS[idx] || '') : hhmm(b.t)) + '</span>';
   } else oh.innerHTML = '';
   const lg = $('nq-legend');
-  lg.innerHTML =
+  const legend =
     '<span class="nq-lg ct"><i style="background:' + PAL.mg + '"></i>' + ctDef(S.type).s + '</span>' +
     '<span class="nq-lg' + (S.ma1On ? '' : ' off') + '"><i style="background:' + PAL.am + '"></i>MA' + S.ma1 + '</span>' +
     '<span class="nq-lg' + (S.ma2On ? '' : ' off') + '"><i style="background:' + PAL.vi + '"></i>MA' + S.ma2 + '</span>' +
@@ -114,18 +115,22 @@ export function syncHeader() {
     '<span class="nq-lg"><i style="background:' + PAL.up + '"></i>TĂNG</span>' +
     '<span class="nq-lg"><i style="background:' + PAL.dn + '"></i>GIẢM</span>' +
     '<span class="nq-lg"><i style="background:' + PAL.mg + '"></i>NẾN PHÁT LẠI</span>' +
-    (S.tf !== '1D' ? '<span class="nq-lg"><i style="background:' + PAL.am + '"></i>TÍN HIỆU MẪU</span>' : '');
+    (S.tf !== '1D' ? '<span class="nq-lg"><i style="background:' + PAL.am + '"></i>' + (D.historical ? 'CẢNH BÁO DHGNN + EBM' : 'TÍN HIỆU MẪU') + '</span>' : '');
+  if (legendMarkup !== legend) { lg.innerHTML = legend; legendMarkup = legend; }
 }
 export function syncTransport() {
   const bars = D.bars, total = D.total, SESSIONS = D.SESSIONS, SESS_UTC = D.SESS_UTC;
-  $('nq-play').innerHTML = S.playing
-    ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg>';
-  $('nq-play').setAttribute('aria-label', S.playing ? 'Tạm dừng' : 'Phát');
+  if (playIconState !== S.playing) {
+    playIconState = S.playing;
+    $('nq-play').innerHTML = S.playing
+      ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3.6v14H7zM13.4 5H17v14h-3.6z"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.2v13.6L19 12z"/></svg>';
+    $('nq-play').setAttribute('aria-label', S.playing ? 'Tạm dừng' : 'Phát');
+  }
   const sc = $('nq-scrub'); sc.value = S.cursor; setRangeFill(sc);
   const pct = total > 1 ? Math.round(S.cursor / (total - 1) * 100) : 0;
   $('nq-sc-pct').textContent = pct + '%';
-  $('nq-sc-a').textContent = S.tf === '1D' ? fmtDateShort(SESSIONS[0]) : (bars[0] ? hhmm(bars[0].t) : '09:30');
+  $('nq-sc-a').textContent = S.tf === '1D' ? fmtDateShort(SESSIONS[0]) : (D.historical ? hhmm(SESS_UTC[S.si]) : (bars[0] ? hhmm(bars[0].t) : '09:30'));
   $('nq-sc-b').textContent = S.tf === '1D' ? fmtDateShort(SESSIONS[S.si]) : (bars[total - 1] ? hhmm(bars[total - 1].t) : '16:00');
   $('nq-b-tf').textContent = S.tf;
   $('nq-b-count').textContent = (S.cursor + 1) + '/' + total + ' nến';

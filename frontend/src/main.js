@@ -7,13 +7,14 @@ import { fmtDate } from './util.js';
 import { audio, blip, chime, tickSound } from './sound.js';
 import { loadMeta, loadSeries, prefetchWatch, fetchViews } from './data.js';
 import { isOffline } from './offline.js';
+import { initHistory, selectHistoryDates } from './history.js';
 import { restorePrefs, persist } from './prefs.js';
 import { applyRole } from './roles.js';
 import {
   defaultCount, clampView, followView, setCursor, setPlaying, stepSpeed, syncSpeed,
   setRangeFill, tg, syncControls, bindToggle, buildSessionSelect, syncHeader, syncTransport, syncAll,
 } from './ui/transport.js';
-import { renderList, renderViews, addDialog, saveViewPop, selectSymbol, removeSymbols, resetList } from './ui/rail.js';
+import { renderList, refreshQuotes, renderViews, addDialog, saveViewPop, selectSymbol, removeSymbols, resetList } from './ui/rail.js';
 import { typeMenu } from './chart/types.js';
 import { renderSignals, saveReview, exportSignalsCSV } from './signals.js';
 import { cv, geo, mouse, ptr, wrap, renderChart, exportPNG, exportCSV } from './chart/renderer.js';
@@ -50,20 +51,39 @@ function loop(t) {
       S.cursor++;
       tickSound(D.bars[S.cursor].c >= D.bars[S.cursor].o);
     }
-    followView(); D.dirty = true; D.sigDirty = true; syncTransport(); syncHeader();
+    if (guard) {
+      followView(); D.dirty = true; D.sigDirty = true; syncTransport(); syncHeader();
+    }
   }
-  if (S.playing || S.cursor < D.total - 1 || S.glow > 0.05) D.dirty = true;
-  if (D.dirty) { renderChart(); D.dirty = false; }
-  if (D.sigDirty && t - D.lastSigRender > 150) { D.lastSigRender = t; D.sigDirty = false; renderSignals(); }
+  if (D.dirty) {
+    const hover = S.hover;
+    renderChart(); D.dirty = false;
+    if (hover !== S.hover) syncHeader();
+  }
+  if (D.sigDirty && t - D.lastSigRender > 150) {
+    D.lastSigRender = t; D.sigDirty = false; renderSignals();
+    if (D.historical && D.total) refreshQuotes();
+  }
 }
 
 /* ---------- hooks nối auth ↔ phần còn lại của app ---------- */
 async function onEnter() {
   try {
-    await loadMeta();
+    const sample = new URLSearchParams(location.search).get('mode') === 'sample';
+    if (!sample && !isOffline()) {
+      const catalog = await api('/historical/sessions');
+      if (catalog.sessions.length) initHistory(catalog.sessions);
+    }
+    if (!D.historical) await loadMeta();
     restorePrefs();
     const resume = D.resume; D.resume = null;
-    if (resume && D.SYM[resume.sym]) { S.sym = resume.sym; S.si = resume.si; }
+    const link = new URLSearchParams(location.search);
+    const linkedSymbol = D.SYM[link.get('symbol')]?.s;
+    if (D.historical) {
+      S.sym = resume?.sym || linkedSymbol || (D.watch.includes('VIAC') ? 'VIAC' : D.watch[0]) || D.SYMBOLS[0].s;
+      selectHistoryDates(S.sym, resume?.day || link.get('day') || '2021-03-23');
+      if (linkedSymbol && curRole().tfs.includes('1m')) S.tf = '1m';
+    } else if (resume && D.SYM[resume.sym]) { S.sym = resume.sym; S.si = resume.si; }
     else { S.sym = D.watch[0] || (D.SYMBOLS[0] && D.SYMBOLS[0].s) || 'AAPL'; S.si = 0; }
     applyRole();
     buildSessionSelect();
@@ -71,6 +91,11 @@ async function onEnter() {
     await fetchViews();
     await loadSeries(true);
     if (resume) setCursor(resume.cursor, true);
+    else if (D.historical && linkedSymbol && link.has('minute')) {
+      const m = Number(link.get('minute'));
+      const idx = D.bars.findIndex(b => b.day === D.SESSIONS[S.si] && b.minute >= m);
+      if (idx >= 0) setCursor(idx, true);
+    }
     prefetchWatch();
     syncAll();
     D.dirty = true;
@@ -227,7 +252,7 @@ function wire() {
   $('nq-a-reset').addEventListener('click', () => {
     setPlaying(false); S.cursor = 0; D.acc = 0; S.follow = true; tg('nq-t-follow', true);
     S.view.count = defaultCount(); S.view.start = 0;
-    syncControls(); D.dirty = true; toast('Đã đặt lại phiên phát', { ms: 2000 });
+    syncAll(); D.dirty = true; D.sigDirty = true; toast('Đã đặt lại phiên phát', { ms: 2000 });
   });
   $('nq-a-random').addEventListener('click', () => {
     const pool = D.watch.length ? D.watch : D.SYMBOLS.map(x => x.s);
@@ -292,7 +317,7 @@ async function resyncServer() {
 async function boot() {
   D.hooks.onEnter = onEnter;
   D.hooks.onLeave = onLeave;
-  D.hooks.onQuoteReady = () => renderList();
+  D.hooks.onQuoteReady = refreshQuotes;
   wireAuth();
   wire();
   wireChart();
@@ -323,7 +348,7 @@ async function boot() {
 /* 401 giữa phiên: lưu vị trí phát, về màn auth; đăng nhập lại sẽ khôi phục. */
 window.addEventListener('nq-unauth', () => {
   if (!$('nq-app').hidden) {
-    D.resume = { sym: S.sym, si: S.si, cursor: S.cursor };
+    D.resume = { sym: S.sym, si: S.si, day: D.SESSIONS[S.si], cursor: S.cursor };
     S.playing = false;
     setSession(null);
     closeDrawer(); closePops();

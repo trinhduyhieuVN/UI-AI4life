@@ -1,7 +1,8 @@
 import { S, D, $, curRole } from './state.js';
 import { api, ApiError } from './api.js';
 import { isOffline, loadOffline, saveSession, OFFLINE_NODATA_MSG } from './offline.js';
-import { clampView, followView, defaultCount, syncAll } from './ui/transport.js';
+import { clampView, followView, defaultCount, syncAll, buildSessionSelect } from './ui/transport.js';
+import { historySeries, sessionFor, selectHistoryDates, historicalWatch, saveHistoryWatch } from './history.js';
 
 let metaPromise = null;
 export function loadMeta() {
@@ -17,16 +18,19 @@ export function loadMeta() {
 }
 
 const seriesPending = new Map();
-export function peekSeries(sym, si, tf) { return D.seriesCache.get(sym + '|' + si + '|' + tf) || null; }
+export function peekSeries(sym, si, tf) { return D.seriesCache.get(sym + '|' + D.SESSIONS[si] + '|' + tf) || null; }
 export function ensureSeries(sym, si, tf) {
-  const key = sym + '|' + si + '|' + tf;
+  const key = sym + '|' + D.SESSIONS[si] + '|' + tf;
+  if (D.historical && !sessionFor(sym, D.SESSIONS[si])) return Promise.resolve([]);
   if (D.seriesCache.has(key)) return Promise.resolve(D.seriesCache.get(key));
   if (seriesPending.has(key)) return seriesPending.get(key);
-  const p = api('/bars?symbol=' + encodeURIComponent(sym) + '&date=' + encodeURIComponent(D.SESSIONS[si]) + '&tf=' + encodeURIComponent(tf))
+  const request = D.historical ? historySeries(sym, D.SESSIONS[si], tf).then(bars => ({ bars }))
+    : api('/bars?symbol=' + encodeURIComponent(sym) + '&date=' + encodeURIComponent(D.SESSIONS[si]) + '&tf=' + encodeURIComponent(tf));
+  const p = request
     .then(r => { D.seriesCache.set(key, r.bars); seriesPending.delete(key); return r.bars; })
     .catch(async e => {
       seriesPending.delete(key);
-      if (isOffline()) {
+      if (!D.historical && isOffline()) {
         const rec = await loadOffline(sym, si);
         if (rec && rec.tf === tf && rec.bars && rec.bars.length) { D.seriesCache.set(key, rec.bars); return rec.bars; }
         throw new ApiError(0, OFFLINE_NODATA_MSG);
@@ -40,17 +44,24 @@ export function ensureSeries(sym, si, tf) {
 let loadToken = 0;
 export async function loadSeries(resetCursor) {
   const tok = ++loadToken;
+  if (D.historical) {
+    S.playing = false; D.acc = 0; S.hover = null;
+    D.bars = []; D.total = 0; D.HAC = {}; D.QCACHE = {}; S.cursor = 0;
+    $('nq-sig-b').textContent = 'Đang tải phiên…';
+    selectHistoryDates(S.sym, D.SESSIONS[S.si]);
+    buildSessionSelect();
+  }
   const tf = S.tf;
   const bars = await ensureSeries(S.sym, S.si, tf);
   if (tok !== loadToken) return;
   D.bars = bars; D.total = bars.length; D.HAC = {};
-  saveSession(S.sym, S.si, bars, null);
+  if (!D.historical) saveSession(S.sym, S.si, bars, null);
   const maxCount = tf === '1D' ? Math.max(11, D.total) : 390;
   $('nq-c-zoom').max = maxCount;
   $('nq-c-zoom').min = tf === '1D' ? 4 : 14;
   if (resetCursor) {
     /* warm start mid-session so the first paint is a living chart, not one candle */
-    S.cursor = Math.max(0, Math.floor(D.total * 0.45));
+    S.cursor = D.historical ? 0 : Math.max(0, Math.floor(D.total * 0.45));
     S.view.count = defaultCount(); S.view.start = 0;
   }
   S.cursor = Math.max(0, Math.min(S.cursor, D.total - 1));
@@ -64,7 +75,7 @@ export function quote(sym) {
   if (D.QCACHE[key]) return D.QCACHE[key];
   const ser = peekSeries(sym, S.si, S.tf);
   if (!ser || !ser.length) {
-    ensureSeries(sym, S.si, S.tf).then(() => { if (D.hooks.onQuoteReady) D.hooks.onQuoteReady(); }).catch(() => {});
+    if (!D.historical || sessionFor(sym, D.SESSIONS[S.si])) ensureSeries(sym, S.si, S.tf).then(() => { if (D.hooks.onQuoteReady) D.hooks.onQuoteReady(); }).catch(() => {});
     return { px: null, d: 0, p: 0, up: true, vol: 0, spark: [], ready: false };
   }
   const idx = Math.min(S.cursor, ser.length - 1);
@@ -92,9 +103,18 @@ export function prefetchWatch() {
 }
 
 /* ---------- watchlist mutations (server-backed) ---------- */
-export function apiAddSymbol(sym) { return api('/watchlist', { method: 'POST', body: { symbol: sym } }); }
-export function apiRemoveSymbol(sym) { return api('/watchlist/' + encodeURIComponent(sym), { method: 'DELETE' }); }
-export function apiOrder(symbols) { return api('/watchlist/order', { method: 'PUT', body: { symbols } }); }
+export async function apiAddSymbol(sym) {
+  if (D.historical) return saveHistoryWatch([...new Set([...historicalWatch(), sym])]);
+  return api('/watchlist', { method: 'POST', body: { symbol: sym } });
+}
+export async function apiRemoveSymbol(sym) {
+  if (D.historical) return saveHistoryWatch(historicalWatch().filter(s => s !== sym));
+  return api('/watchlist/' + encodeURIComponent(sym), { method: 'DELETE' });
+}
+export async function apiOrder(symbols) {
+  if (D.historical) return saveHistoryWatch(symbols);
+  return api('/watchlist/order', { method: 'PUT', body: { symbols } });
+}
 /* /order đòi cùng tập thành viên → thay danh sách = DELETE phần bỏ + POST phần thêm + ORDER. */
 export async function replaceWatch(newList) {
   const cur = D.watch.slice();
@@ -121,12 +141,15 @@ export function apiDeleteView(vid) { return api('/views/' + vid, { method: 'DELE
 
 /* ---------- drawer stats (exact, from 1m series) ---------- */
 export async function drawerStats(sym, si) {
-  const m1 = await ensureSeries(sym, si, '1m');
+  const shownBar = D.bars[S.cursor];
+  const index = D.historical && shownBar ? D.SESSIONS.indexOf(shownBar.day) : si;
+  const all = await ensureSeries(sym, index, '1m');
+  const m1 = D.historical ? all.filter(b => b.t <= shownBar.t) : all;
   const open = m1[0].o, close = m1[m1.length - 1].c;
   let high = -Infinity, low = Infinity, vol = 0, pv = 0;
   for (const b of m1) { if (b.h > high) high = b.h; if (b.l < low) low = b.l; vol += b.v; pv += (b.h + b.l + b.c) / 3 * b.v; }
   const vwap = vol ? pv / vol : open;
   let prev = open;
-  if (si > 0) { const d1 = await ensureSeries(sym, si - 1, '1D'); prev = d1[d1.length - 1].c; }
+  if (index > 0) { const d1 = await ensureSeries(sym, index - 1, '1D'); if (d1.length) prev = d1.at(-1).c; }
   return { open, close, high, low, vol, vwap, prev };
 }

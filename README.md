@@ -1,4 +1,10 @@
-# Nasdaq Replay
+# NevAI
+
+Giao diện chính nằm tại `/orbit/`. Mã React Native cho web và điện thoại, hướng dẫn chạy và nguồn tin nằm trong [orbital](orbital/README.md). FastAPI phục vụ cả bản web đã build và terminal phát lại phiên Nasdaq.
+
+Pipeline nghiên cứu nằm trong [research](research/). Để tái tạo baseline tám mã, cài thư viện từ [requirements.txt](research/msft_month_baseline/requirements.txt), chạy `prepare_global.py --data <thư mục Databento>` rồi `train_global.py` trong thư mục [msft_month_baseline](research/msft_month_baseline/). Script [import_historical.py](tools/import_historical.py) kết hợp kết quả mô hình với dữ liệu MBO của bạn để tạo cơ sở dữ liệu phát lại.
+
+## Nasdaq Replay
 
 Terminal phát lại phiên giao dịch Nasdaq theo thời gian nén, kèm cảnh báo bất thường **mô phỏng** — dựng lại từ artifact nghiên cứu HTML đơn trang thành ứng dụng self-host đa nền tảng (web + PWA cài được, đọc offline).
 

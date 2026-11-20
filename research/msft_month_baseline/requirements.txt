@@ -1,0 +1,6 @@
+numpy
+pandas
+matplotlib
+scikit-learn
+torch
+zstandard; python_version < "3.14"

@@ -336,6 +336,9 @@ select.nq-inp{appearance:none;cursor:pointer;padding-right:28px;
 /* signal panel — seeded sample anomalies, per-role depth */
 .nq-signal{flex:none;display:flex;flex-direction:column;border-top:1px solid var(--line);background:var(--bg1);max-height:200px;}
 .nq-signal.collapsed{max-height:none;}
+.nq-signal.historical:not(.collapsed){height:clamp(108px,16vh,152px);}
+.nq-signal.historical .nq-sig-b{scrollbar-gutter:stable;}
+.nq-signal.historical .nq-sig-n{min-width:16ch;}
 .nq-sig-h{flex:none;display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--line);background:var(--bg3);flex-wrap:wrap;}
 .nq-signal.collapsed .nq-sig-h{border-bottom:none;}
 .nq-sig-h h2{font-size:13px;font-weight:700;color:var(--hi);white-space:nowrap;}

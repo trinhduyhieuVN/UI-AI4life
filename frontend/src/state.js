@@ -1,3 +1,4 @@
+import { historicalWatch } from './history.js';
 export const root = document.getElementById('nq-root');
 export const $ = id => document.getElementById(id);
 
@@ -49,6 +50,7 @@ export function setSession(me) {
   prefsCache = me ? me.prefs : null;
   capsCache = me ? me.caps : null;
   D.watch = me && me.watch ? me.watch.slice() : [];
+  if (me && D.historical) D.watch = historicalWatch();
   D.views = me && me.views ? me.views.map(v => ({ id: null, name: v.name, symbols: v.symbols || [], sort: v.sort || 'manual', tf: v.tf || '5m' })) : [];
   D.reviews = me && me.reviews ? me.reviews : {};
   if (!me) { D.QCACHE = {}; D.sigCache.clear(); }
